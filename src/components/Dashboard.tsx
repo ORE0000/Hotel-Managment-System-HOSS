@@ -41,21 +41,21 @@ const Dashboard: React.FC = () => {
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [showOtherHotels, setShowOtherHotels] = useState(false);
 
-  // Fetch Enquiries
-  const { data: enquiries, isLoading: isEnquiriesLoading } = useQuery<Enquiry[]>({
-    queryKey: ['enquiries'],
-    queryFn: fetchEnquiryData,
-    retry: 2,
-    onError: (err: any) => toast.error(`Failed to load enquiries: ${err.message}`),
-  });
+// Fetch Enquiries
+const { data: enquiries, isLoading: isEnquiriesLoading } = useQuery<Enquiry[], Error>({
+  queryKey: ['enquiries'],
+  queryFn: fetchEnquiryData,
+  retry: 2,
+  onError: (err: Error) => toast.error(`Failed to load enquiries: ${err.message}`),
+});
 
-  // Fetch HOSS Bookings
-  const { data: hossBookings, isLoading: isBookingsLoading } = useQuery<BookingDetail[]>({
-    queryKey: ['hossBookings'],
-    queryFn: () => fetchHOSSBookings({}),
-    retry: 2,
-    onError: (err: any) => toast.error(`Failed to load bookings: ${err.message}`),
-  });
+// Fetch HOSS Bookings
+const { data: hossBookings, isLoading: isBookingsLoading } = useQuery<BookingDetail[], Error>({
+  queryKey: ['hossBookings'],
+  queryFn: () => fetchHOSSBookings({}),
+  retry: 2,
+  onError: (err: Error) => toast.error(`Failed to load bookings: ${err.message}`),
+});
 
   // Refresh Mutation
   const refreshMutation = useMutation({
@@ -129,27 +129,27 @@ const Dashboard: React.FC = () => {
   // Filtered Recent Enquiries (Today's, Top 3)
   const recentEnquiries = useMemo(() => {
     if (!enquiries) return [];
-    return enquiries
-      .filter((enquiry) => isToday(new Date(enquiry.checkIn)))
-      .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime())
+    return (enquiries as Enquiry[])
+      .filter((enquiry: Enquiry) => isToday(new Date(enquiry.checkIn)))
+      .sort((a: Enquiry, b: Enquiry) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime())
       .slice(0, 3);
   }, [enquiries]);
 
   // Filtered Recent Bookings (Today's, Top 4)
   const recentBookings = useCallback(() => {
     if (!hossBookings) return [];
-    return hossBookings
-      .filter((booking) => isToday(new Date(booking.checkIn)))
-      .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime())
+    return (hossBookings as BookingDetail[])
+      .filter((booking: BookingDetail) => isToday(new Date(booking.checkIn)))
+      .sort((a: BookingDetail, b: BookingDetail) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime())
       .slice(0, 4);
   }, [hossBookings]);
 
   // All Bookings for Today
   const allTodayBookings = useMemo(() => {
     if (!hossBookings) return [];
-    return hossBookings
-      .filter((booking) => isToday(new Date(booking.checkIn)))
-      .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
+    return (hossBookings as BookingDetail[])
+      .filter((booking: BookingDetail) => isToday(new Date(booking.checkIn)))
+      .sort((a: BookingDetail, b: BookingDetail) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
   }, [hossBookings]);
 
   // Calculate trends based on actual data
