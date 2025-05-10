@@ -55,22 +55,22 @@ const FilterDetailsPage: React.FC = () => {
     data: filterDetails,
     error,
     isLoading,
-  } = useQuery<FilterDetail[]>({
+  } = useQuery<FilterDetail[] | undefined>({
     queryKey: ['filterDetails'],
     queryFn: () => fetchFilterDetails({}),
     retry: 2,
     onSuccess: () => {
       toast.success('Filter data loaded successfully');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error(`Failed to load filter data: ${err.message}`);
     },
   });
 
-  const { data: hotels, isLoading: hotelsLoading } = useQuery({
+  const { data: hotels, isLoading: hotelsLoading } = useQuery<string[]>({
     queryKey: ['hotels'],
     queryFn: fetchHotels,
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error(`Failed to load hotels: ${err.message}`);
     },
   });
@@ -106,8 +106,8 @@ const FilterDetailsPage: React.FC = () => {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setSearchQuery(value); // Update input value immediately
-    debouncedSearch(value); // Debounce the search query update
+    setSearchQuery(value);
+    debouncedSearch(value);
   };
 
   const clearSearch = () => {
@@ -129,20 +129,20 @@ const FilterDetailsPage: React.FC = () => {
     if (selectedRows.size === filteredData.length) {
       setSelectedRows(new Set());
     } else {
-      const allIndices = filteredData.map((_, idx) => idx);
+      const allIndices = filteredData.map((_: FilterDetail, idx: number) => idx);
       setSelectedRows(new Set(allIndices));
     }
   };
 
   const copySelectedRows = () => {
-    const selectedData = filteredData.filter((_, idx) => selectedRows.has(idx));
+    const selectedData = filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx));
     if (selectedData.length === 0) {
       toast.warn('No rows selected to copy');
       return;
     }
     const text = selectedData
       .map(
-        (item) =>
+        (item: FilterDetail) =>
           `Guest: ${item.name}\nPlan: ${item.plan}\nCheck-In: ${item.checkIn}\nCheck-Out: ${item.checkOut}\nHotel: ${item.hotel}\nDays: ${item.day}\nPAX: ${item.pax}\nDB: ${item.db}\nTB: ${item.tb}\nFB: ${item.fb}\nExtra: ${item.extra}\nStatus: ${item.status}\nTotal Bill: ₹${item.totalBill || 'N/A'}\nAdvance: ₹${item.advance || '0'}\nDue: ₹${item.due || '0'}\n---`
       )
       .join('\n');
@@ -153,6 +153,11 @@ const FilterDetailsPage: React.FC = () => {
   const openModal = (booking: FilterDetail) => {
     setSelectedBooking(booking);
     setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setSelectedBooking(null);
   };
 
   const copyBookingDetails = () => {
@@ -189,7 +194,7 @@ const FilterDetailsPage: React.FC = () => {
   const downloadCSV = () => {
     const data =
       selectedRows.size > 0
-        ? filteredData.filter((_, idx) => selectedRows.has(idx))
+        ? filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx))
         : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
@@ -212,7 +217,7 @@ const FilterDetailsPage: React.FC = () => {
       'Advance',
       'Due',
     ];
-    const rows = data.map((item) => [
+    const rows = data.map((item: FilterDetail) => [
       item.name,
       item.plan,
       item.checkIn,
@@ -244,7 +249,7 @@ const FilterDetailsPage: React.FC = () => {
   const downloadJSON = () => {
     const data =
       selectedRows.size > 0
-        ? filteredData.filter((_, idx) => selectedRows.has(idx))
+        ? filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx))
         : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
@@ -264,7 +269,7 @@ const FilterDetailsPage: React.FC = () => {
   const downloadPDF = () => {
     const data =
       selectedRows.size > 0
-        ? filteredData.filter((_, idx) => selectedRows.has(idx))
+        ? filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx))
         : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
@@ -275,7 +280,7 @@ const FilterDetailsPage: React.FC = () => {
     doc.setFontSize(12);
     doc.text('Booking Report', 10, y);
     y += 10;
-    data.forEach((item, idx) => {
+    data.forEach((item: FilterDetail, idx: number) => {
       doc.text(`Booking ${idx + 1}`, 10, y);
       y += 10;
       doc.text(`Guest: ${item.name}`, 10, y);
@@ -318,37 +323,36 @@ const FilterDetailsPage: React.FC = () => {
   };
 
   const filteredData = useMemo(() => {
-    if (!filterDetails) return [];
-    let result = filterDetails;
+    if (!filterDetails || !Array.isArray(filterDetails)) return [];
+    let result: FilterDetail[] = filterDetails;
 
     if (filters.hotel) {
-      result = result.filter((item) =>
+      result = result.filter((item: FilterDetail) =>
         item.hotel.toUpperCase().includes(filters.hotel.toUpperCase())
       );
     }
     if (filters.status) {
-      result = result.filter(
-        (item) => item.status.toLowerCase() === filters.status.toLowerCase()
+      result = result.filter((item: FilterDetail) =>
+        item.status.toLowerCase() === filters.status.toLowerCase()
       );
     }
     if (filters.startDate) {
-      result = result.filter(
-        (item) => new Date(item.checkIn) >= new Date(filters.startDate)
+      result = result.filter((item: FilterDetail) =>
+        new Date(item.checkIn) >= new Date(filters.startDate)
       );
     }
     if (filters.endDate) {
-      result = result.filter(
-        (item) => new Date(item.checkOut) <= new Date(filters.endDate)
+      result = result.filter((item: FilterDetail) =>
+        new Date(item.checkOut) <= new Date(filters.endDate)
       );
     }
     if (deferredSearchQuery) {
       const lowerQuery = deferredSearchQuery.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.name.toLowerCase().includes(lowerQuery) ||
-          item.hotel.toLowerCase().includes(lowerQuery) ||
-          item.plan.toLowerCase().includes(lowerQuery) ||
-          item.status.toLowerCase().includes(lowerQuery)
+      result = result.filter((item: FilterDetail) =>
+        item.name.toLowerCase().includes(lowerQuery) ||
+        item.hotel.toLowerCase().includes(lowerQuery) ||
+        item.plan.toLowerCase().includes(lowerQuery) ||
+        item.status.toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -358,11 +362,17 @@ const FilterDetailsPage: React.FC = () => {
   const totals = useMemo(
     () => ({
       totalBill: filteredData.reduce(
-        (sum, item) => sum + (item.totalBill || 0),
+        (sum: number, item: FilterDetail) => sum + (item.totalBill || 0),
         0
       ),
-      advance: filteredData.reduce((sum, item) => sum + (item.advance || 0), 0),
-      due: filteredData.reduce((sum, item) => sum + (item.due || 0), 0),
+      advance: filteredData.reduce(
+        (sum: number, item: FilterDetail) => sum + (item.advance || 0),
+        0
+      ),
+      due: filteredData.reduce(
+        (sum: number, item: FilterDetail) => sum + (item.due || 0),
+        0
+      ),
     }),
     [filteredData]
   );
@@ -418,7 +428,7 @@ const FilterDetailsPage: React.FC = () => {
                   aria-label="Filter by Hotel"
                 >
                   <option value="">All Hotels</option>
-                  {hotels?.map((hotel) => (
+                  {hotels?.map((hotel: string) => (
                     <option key={hotel} value={hotel}>
                       {hotel}
                     </option>
@@ -505,7 +515,7 @@ const FilterDetailsPage: React.FC = () => {
 
       {isLoading && (
         <div className="glass-card p-4 sm:p-6 rounded-xl">
-          {[...Array(5)].map((_, idx) => (
+          {[...Array(5)].map((_: undefined, idx: number) => (
             <div key={idx} className="animate-pulse flex space-x-4 mb-4">
               <div className="flex-1 space-y-4 py-1">
                 <div className="h-4 bg-[var(--sidebar-hover)] rounded w-3/4"></div>
@@ -564,7 +574,7 @@ const FilterDetailsPage: React.FC = () => {
               <motion.button
                 onClick={copySelectedRows}
                 disabled={selectedRows.size === 0}
-                className="btn-primary flex items-center gap-2 text-sm"
+                className="btn-primary flex items-center gap-2 text-sm px-4 py-2"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
@@ -574,7 +584,7 @@ const FilterDetailsPage: React.FC = () => {
               <div className="relative">
                 <motion.button
                   onClick={() => setShowExportDropdown(!showExportDropdown)}
-                  className="btn-primary flex items-center gap-2 text-sm"
+                  className="btn-primary flex items-center gap-2 text-sm px-4 py-2"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
@@ -651,7 +661,7 @@ const FilterDetailsPage: React.FC = () => {
                 </thead>
                 <tbody>
                   {paginatedData.length > 0 ? (
-                    paginatedData.map((item, idx) => (
+                    paginatedData.map((item: FilterDetail, idx: number) => (
                       <motion.tr
                         key={item.name + item.checkIn}
                         initial={{ opacity: 0, y: 10 }}
@@ -728,7 +738,7 @@ const FilterDetailsPage: React.FC = () => {
 
           <div className="md:hidden space-y-4">
             {paginatedData.length > 0 ? (
-              paginatedData.map((item, idx) => (
+              paginatedData.map((item: FilterDetail, idx: number) => (
                 <motion.div
                   key={item.name + item.checkIn}
                   className={`glass-card p-4 rounded-xl neumorphic-card ${
@@ -784,52 +794,74 @@ const FilterDetailsPage: React.FC = () => {
                       <span className="font-medium">Check-Out:</span>{' '}
                       {item.checkOut}
                     </p>
-                    {expandedCard === (page - 1) * itemsPerPage + idx && (
-                      <div className="space-y-2">
-                        <p>
-                          <span className="font-medium">Days:</span> {item.day}
-                        </p>
-                        <p>
-                          <span className="font-medium">PAX:</span> {item.pax}
-                        </p>
-                        <p>
-                          <span className="font-medium">DB:</span> {item.db}
-                        </p>
-                        <p>
-                          <span className="font-medium">TB:</span> {item.tb}
-                        </p>
-                        <p>
-                          <span className="font-medium">FB:</span> {item.fb}
-                        </p>
-                        <p>
-                          <span className="font-medium">Extra:</span>{' '}
-                          {item.extra}
-                        </p>
-                        <p>
-                          <span className="font-medium">Status:</span>{' '}
-                          <span
-                            className={`badge badge-${item.status.toLowerCase()}`}
-                          >
-                            {item.status}
-                          </span>
-                        </p>
-                      </div>
-                    )}
+                    <motion.div
+                      className="flex justify-between items-center cursor-pointer"
+                      onClick={() =>
+                        setExpandedCard(
+                          expandedCard === (page - 1) * itemsPerPage + idx
+                            ? null
+                            : (page - 1) * itemsPerPage + idx
+                        )
+                      }
+                    >
+                      <span className="font-medium text-[var(--icon-bg-blue)]">
+                        {expandedCard === (page - 1) * itemsPerPage + idx
+                          ? 'Show Less'
+                          : 'Show More'}
+                      </span>
+                      <motion.span
+                        animate={{
+                          rotate:
+                            expandedCard === (page - 1) * itemsPerPage + idx
+                              ? 180
+                              : 0,
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ChevronRightIcon className="w-5 h-5" />
+                      </motion.span>
+                    </motion.div>
+                    <AnimatePresence>
+                      {expandedCard === (page - 1) * itemsPerPage + idx && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-2"
+                        >
+                          <p>
+                            <span className="font-medium">Days:</span>{' '}
+                            {item.day}
+                          </p>
+                          <p>
+                            <span className="font-medium">PAX:</span> {item.pax}
+                          </p>
+                          <p>
+                            <span className="font-medium">DB:</span> {item.db}
+                          </p>
+                          <p>
+                            <span className="font-medium">TB:</span> {item.tb}
+                          </p>
+                          <p>
+                            <span className="font-medium">FB:</span> {item.fb}
+                          </p>
+                          <p>
+                            <span className="font-medium">Extra:</span>{' '}
+                            {item.extra}
+                          </p>
+                          <p>
+                            <span className="font-medium">Status:</span>{' '}
+                            <span
+                              className={`badge badge-${item.status.toLowerCase()}`}
+                            >
+                              {item.status}
+                            </span>
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <button
-                    onClick={() =>
-                      setExpandedCard(
-                        expandedCard === (page - 1) * itemsPerPage + idx
-                          ? null
-                          : (page - 1) * itemsPerPage + idx
-                      )
-                    }
-                    className="text-[var(--icon-bg-blue)] hover:text-blue-800 text-sm mt-2 font-medium"
-                  >
-                    {expandedCard === (page - 1) * itemsPerPage + idx
-                      ? 'Show Less'
-                      : 'Show More'}
-                  </button>
                 </motion.div>
               ))
             ) : (
@@ -909,7 +941,7 @@ const FilterDetailsPage: React.FC = () => {
 
       <Modal
         isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
+        onRequestClose={closeModal}
         className="glass-card p-4 sm:p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-auto mt-20 border border-[var(--border-color)] neumorphic-card"
         overlayClassName="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
       >
@@ -920,7 +952,7 @@ const FilterDetailsPage: React.FC = () => {
                 Booking Details
               </h3>
               <motion.button
-                onClick={() => setModalIsOpen(false)}
+                onClick={closeModal}
                 className="p-2 rounded-full hover:bg-[var(--sidebar-hover)] neumorphic-card"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}

@@ -122,10 +122,12 @@ export const fetchFilterDetails = async (filters: {
 
 export const fetchHotels = async (): Promise<string[]> => {
   try {
-    const response = await axios.get(`${WEB_APP_URL}?action=getFilterDetails`);
+    const response = await axios.get<{ data: FilterDetail[]; error?: string }>(
+      `${WEB_APP_URL}?action=getFilterDetails`
+    );
     if (response.data.error) throw new Error(response.data.error);
-    const hotels = Array.isArray(response.data.data) 
-      ? [...new Set(response.data.data.map((item: FilterDetail) => item.hotel))].filter(h => h)
+    const hotels = Array.isArray(response.data.data)
+      ? [...new Set(response.data.data.map((item) => item.hotel).filter((hotel): hotel is string => typeof hotel === 'string'))]
       : [];
     return hotels;
   } catch (error) {

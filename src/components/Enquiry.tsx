@@ -35,7 +35,7 @@ const EnquiryPage: React.FC = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const itemsPerPage = 10;
 
-  const { data: enquiries, error, isLoading, refetch } = useQuery<Enquiry[]>({
+  const { data: enquiries, error, isLoading, refetch } = useQuery<Enquiry[] | undefined>({
     queryKey: ["enquiries"],
     queryFn: fetchEnquiryData,
     retry: 2,
@@ -88,8 +88,8 @@ const EnquiryPage: React.FC = () => {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setSearchQuery(value); // Update input value immediately
-    debouncedSearch(value); // Debounce the search query update
+    setSearchQuery(value);
+    debouncedSearch(value);
   };
 
   const clearSearch = () => {
@@ -111,20 +111,20 @@ const EnquiryPage: React.FC = () => {
     if (selectedRows.size === filteredData.length) {
       setSelectedRows(new Set());
     } else {
-      const allIndices = filteredData.map((_, idx) => idx);
+      const allIndices = filteredData.map((_: Enquiry, idx: number) => idx);
       setSelectedRows(new Set(allIndices));
     }
   };
 
   const copySelectedRows = () => {
-    const selectedData = filteredData.filter((_, idx) => selectedRows.has(idx));
+    const selectedData = filteredData.filter((_: Enquiry, idx: number) => selectedRows.has(idx));
     if (selectedData.length === 0) {
       toast.warn("No rows selected to copy");
       return;
     }
     const text = selectedData
       .map(
-        (item) =>
+        (item: Enquiry) =>
           `Guest: ${item.guestName}\nContact: ${item.contact}\nHotel: ${item.hotel}\nCheck-In: ${item.checkIn}\nCheck-Out: ${item.checkOut}\nDays: ${item.day}\nPAX: ${item.pax}\nRooms: Double Bed=${item.roomName.doubleBed}, Triple Bed=${item.roomName.tripleBed}, Four Bed=${item.roomName.fourBed}, Extra Bed=${item.roomName.extraBed}, Kitchen=${item.roomName.kitchen}\nRoom Rates: Double Bed=₹${item.roomRent.doubleBed}, Triple Bed=₹${item.roomRent.tripleBed}, Four Bed=₹${item.roomRent.fourBed}, Extra Bed=₹${item.roomRent.extraBed}, Kitchen=₹${item.roomRent.kitchen}\nDiscount: Double Bed=₹${item.discount.doubleBed}, Triple Bed=₹${item.discount.tripleBed}, Four Bed=₹${item.discount.fourBed}, Extra Bed=₹${item.discount.extraBed}, Kitchen=₹${item.discount.kitchen}\nStatus: ${item.status}\nAdvance: ₹${item.advance}\nTotal Bill: ₹${item.billAmount}\nDue: ₹${item.due}\n---`
       )
       .join("\n");
@@ -179,7 +179,7 @@ const EnquiryPage: React.FC = () => {
   };
 
   const downloadCSV = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_, idx) => selectedRows.has(idx)) : filteredData;
+    const data = selectedRows.size > 0 ? filteredData.filter((_: Enquiry, idx: number) => selectedRows.has(idx)) : filteredData;
     if (data.length === 0) {
       toast.warn("No data available to download");
       return;
@@ -192,7 +192,7 @@ const EnquiryPage: React.FC = () => {
       "Bill Amount", "Advance", "Due", "Cash-In", "Mode of Payment", "Cash-Out",
       "Date", "To Account", "Scheme", "Status"
     ];
-    const rows = data.map((item) => [
+    const rows = data.map((item: Enquiry) => [
       item.guestName, item.contact, item.hotel, item.checkIn, item.checkOut, item.day, item.pax,
       item.roomName.doubleBed, item.roomName.tripleBed, item.roomName.fourBed, item.roomName.extraBed, item.roomName.kitchen,
       item.roomRent.doubleBed, item.roomRent.tripleBed, item.roomRent.fourBed, item.roomRent.extraBed, item.roomRent.kitchen,
@@ -210,7 +210,7 @@ const EnquiryPage: React.FC = () => {
   };
 
   const downloadJSON = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_, idx) => selectedRows.has(idx)) : filteredData;
+    const data = selectedRows.size > 0 ? filteredData.filter((_: Enquiry, idx: number) => selectedRows.has(idx)) : filteredData;
     if (data.length === 0) {
       toast.warn("No data available to download");
       return;
@@ -225,7 +225,7 @@ const EnquiryPage: React.FC = () => {
   };
 
   const downloadPDF = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_, idx) => selectedRows.has(idx)) : filteredData;
+    const data = selectedRows.size > 0 ? filteredData.filter((_: Enquiry, idx: number) => selectedRows.has(idx)) : filteredData;
     if (data.length === 0) {
       toast.warn("No data available to download");
       return;
@@ -235,7 +235,7 @@ const EnquiryPage: React.FC = () => {
     doc.setFontSize(12);
     doc.text("Enquiries Report", 10, y);
     y += 10;
-    data.forEach((item, idx) => {
+    data.forEach((item: Enquiry, idx: number) => {
       doc.text(`Enquiry ${idx + 1}`, 10, y);
       y += 10;
       doc.text(`Guest: ${item.guestName}`, 10, y);
@@ -292,32 +292,31 @@ const EnquiryPage: React.FC = () => {
   };
 
   const filteredData = useMemo(() => {
-    if (!enquiries) return [];
-    let result = enquiries;
+    if (!enquiries || !Array.isArray(enquiries)) return [];
+    let result: Enquiry[] = enquiries;
 
     if (filters.status) {
-      result = result.filter((item) => item.status.toLowerCase() === filters.status.toLowerCase());
+      result = result.filter((item: Enquiry) => item.status.toLowerCase() === filters.status.toLowerCase());
     }
     if (filters.startDate) {
-      result = result.filter((item) => new Date(item.checkIn) >= new Date(filters.startDate));
+      result = result.filter((item: Enquiry) => new Date(item.checkIn) >= new Date(filters.startDate));
     }
     if (filters.endDate) {
-      result = result.filter((item) => new Date(item.checkOut) <= new Date(filters.endDate));
+      result = result.filter((item: Enquiry) => new Date(item.checkOut) <= new Date(filters.endDate));
     }
     if (filters.hotel) {
-      result = result.filter((item) => item.hotel.toLowerCase().includes(filters.hotel.toLowerCase()));
+      result = result.filter((item: Enquiry) => item.hotel.toLowerCase().includes(filters.hotel.toLowerCase()));
     }
     if (deferredSearchQuery) {
       const lowerQuery = deferredSearchQuery.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.guestName.toLowerCase().includes(lowerQuery) ||
-          item.contact.toLowerCase().includes(lowerQuery) ||
-          item.hotel.toLowerCase().includes(lowerQuery) ||
-          item.status.toLowerCase().includes(lowerQuery) ||
-          item.modeOfPayment.toLowerCase().includes(lowerQuery) ||
-          item.toAccount.toLowerCase().includes(lowerQuery) ||
-          item.scheme.toLowerCase().includes(lowerQuery)
+      result = result.filter((item: Enquiry) =>
+        item.guestName.toLowerCase().includes(lowerQuery) ||
+        item.contact.toLowerCase().includes(lowerQuery) ||
+        item.hotel.toLowerCase().includes(lowerQuery) ||
+        item.status.toLowerCase().includes(lowerQuery) ||
+        item.modeOfPayment.toLowerCase().includes(lowerQuery) ||
+        item.toAccount.toLowerCase().includes(lowerQuery) ||
+        item.scheme.toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -326,11 +325,11 @@ const EnquiryPage: React.FC = () => {
 
   const totals = useMemo(
     () => ({
-      billAmount: filteredData.reduce((sum, item) => sum + (item.billAmount || 0), 0),
-      advance: filteredData.reduce((sum, item) => sum + (item.advance || 0), 0),
-      due: filteredData.reduce((sum, item) => sum + (item.due || 0), 0),
-      cashIn: filteredData.reduce((sum, item) => sum + (item.cashIn || 0), 0),
-      cashOut: filteredData.reduce((sum, item) => sum + (item.cashOut || 0), 0),
+      billAmount: filteredData.reduce((sum: number, item: Enquiry) => sum + (item.billAmount || 0), 0),
+      advance: filteredData.reduce((sum: number, item: Enquiry) => sum + (item.advance || 0), 0),
+      due: filteredData.reduce((sum: number, item: Enquiry) => sum + (item.due || 0), 0),
+      cashIn: filteredData.reduce((sum: number, item: Enquiry) => sum + (item.cashIn || 0), 0),
+      cashOut: filteredData.reduce((sum: number, item: Enquiry) => sum + (item.cashOut || 0), 0),
     }),
     [filteredData]
   );
@@ -403,7 +402,7 @@ const EnquiryPage: React.FC = () => {
                   aria-label="Filter by Hotel"
                 >
                   <option value="">All Hotels</option>
-                  {hotels?.map((hotel) => (
+                  {hotels?.map((hotel: string) => (
                     <option key={hotel} value={hotel}>{hotel}</option>
                   ))}
                 </select>
@@ -458,7 +457,7 @@ const EnquiryPage: React.FC = () => {
 
       {isLoading && (
         <div className="glass-card p-4 sm:p-6 rounded-xl">
-          {[...Array(5)].map((_, idx) => (
+          {[...Array(5)].map((_: undefined, idx: number) => (
             <div key={idx} className="animate-pulse flex space-x-4 mb-4">
               <div className="flex-1 space-y-4 py-1">
                 <div className="h-4 bg-[var(--sidebar-hover)] rounded w-3/4"></div>
@@ -562,7 +561,6 @@ const EnquiryPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop Table View */}
           <div className="hidden md:block glass-card p-4 sm:p-6 rounded-xl mb-6 neumorphic-card">
             <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
               <table className="modern-table w-full text-left text-sm">
@@ -605,7 +603,7 @@ const EnquiryPage: React.FC = () => {
                 </thead>
                 <tbody>
                   {paginatedData.length > 0 ? (
-                    paginatedData.map((item, idx) => (
+                    paginatedData.map((item: Enquiry, idx: number) => (
                       <motion.tr
                         key={item.guestName + item.checkIn}
                         initial={{ opacity: 0, y: 10 }}
@@ -771,10 +769,9 @@ const EnquiryPage: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Card View */}
           <div className="md:hidden space-y-4">
             {paginatedData.length > 0 ? (
-              paginatedData.map((item, idx) => (
+              paginatedData.map((item: Enquiry, idx: number) => (
                 <motion.div
                   key={item.guestName + item.checkIn}
                   className={`glass-card p-4 rounded-xl neumorphic-card ${
@@ -927,7 +924,6 @@ const EnquiryPage: React.FC = () => {
             )}
           </div>
 
-          {/* Modal for Enquiry Details */}
           <Modal
             isOpen={modalIsOpen}
             onRequestClose={closeModal}

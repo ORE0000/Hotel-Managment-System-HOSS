@@ -33,17 +33,23 @@ const HOSSBookings: React.FC = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const itemsPerPage = 10;
 
-  const { data: hossBookings, error, isLoading, refetch } = useQuery<BookingDetail[]>({
+  const { data: hossBookings, error, isLoading, refetch } = useQuery<BookingDetail[], Error>({
     queryKey: ["hossBookings"],
     queryFn: () => fetchHOSSBookings({}),
     retry: 2,
-    onSuccess: () => {
-      toast.success("HOSS bookings loaded successfully");
-    },
-    onError: (err: any) => {
-      toast.error(`Failed to load HOSS bookings: ${err.message}`);
-    },
   });
+
+  useEffect(() => {
+    if (hossBookings) {
+      toast.success("HOSS bookings loaded successfully");
+    }
+  }, [hossBookings]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(`Failed to load HOSS bookings: ${error.message}`);
+    }
+  }, [error]);
 
   useEffect(() => {
     refetch();
@@ -79,8 +85,8 @@ const HOSSBookings: React.FC = () => {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setSearchQuery(value); // Update input value immediately
-    debouncedSearch(value); // Debounce the search query update
+    setSearchQuery(value);
+    debouncedSearch(value);
   };
 
   const clearSearch = () => {
@@ -108,14 +114,14 @@ const HOSSBookings: React.FC = () => {
   };
 
   const copySelectedRows = () => {
-    const selectedData = filteredData.filter((_, idx) => selectedRows.has(idx));
+    const selectedData = filteredData.filter((_, idx: number) => selectedRows.has(idx));
     if (selectedData.length === 0) {
       toast.warn("No rows selected to copy");
       return;
     }
     const text = selectedData
       .map(
-        (item) =>
+        (item: BookingDetail) =>
           `Guest: ${item.guestName}\nPlan: ${item.plan}\nCheck-In: ${item.checkIn}\nCheck-Out: ${item.checkOut}\nHotel: ${item.hotelName}\nPAX: ${item.pax || "N/A"}\nRooms: ${item.noOfRooms || "N/A"}\nExtra Bed: ${item.extraBed || "N/A"}\nKitchen: ${item.kitchen || "N/A"}\nStatus: ${item.status}\nAdvance: ₹${item.advance || "0"}\nTotal Bill: ₹${item.totalBill || "0"}\n---`
       )
       .join("\n");
@@ -157,7 +163,9 @@ const HOSSBookings: React.FC = () => {
   };
 
   const downloadCSV = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_, idx) => selectedRows.has(idx)) : filteredData;
+    const data = selectedRows.size > 0 
+      ? filteredData.filter((_, idx: number) => selectedRows.has(idx)) 
+      : filteredData;
     if (data.length === 0) {
       toast.warn("No data available to download");
       return;
@@ -166,7 +174,7 @@ const HOSSBookings: React.FC = () => {
       "Guest", "Plan", "Check-In", "Check-Out", "Hotel", "PAX", "Rooms", 
       "Extra Bed", "Kitchen", "Status", "Advance", "Total Bill"
     ];
-    const rows = data.map((item) => [
+    const rows = data.map((item: BookingDetail) => [
       item.guestName, item.plan, item.checkIn, item.checkOut, item.hotelName, 
       item.pax || "N/A", item.noOfRooms || "N/A", item.extraBed || "N/A", 
       item.kitchen || "N/A", item.status, item.advance || "0", item.totalBill || "0"
@@ -181,7 +189,9 @@ const HOSSBookings: React.FC = () => {
   };
 
   const downloadJSON = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_, idx) => selectedRows.has(idx)) : filteredData;
+    const data = selectedRows.size > 0 
+      ? filteredData.filter((_, idx: number) => selectedRows.has(idx)) 
+      : filteredData;
     if (data.length === 0) {
       toast.warn("No data available to download");
       return;
@@ -196,7 +206,9 @@ const HOSSBookings: React.FC = () => {
   };
 
   const downloadPDF = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_, idx) => selectedRows.has(idx)) : filteredData;
+    const data = selectedRows.size > 0 
+      ? filteredData.filter((_, idx: number) => selectedRows.has(idx)) 
+      : filteredData;
     if (data.length === 0) {
       toast.warn("No data available to download");
       return;
@@ -206,7 +218,7 @@ const HOSSBookings: React.FC = () => {
     doc.setFontSize(12);
     doc.text("HOSS Bookings Report", 10, y);
     y += 10;
-    data.forEach((item, idx) => {
+    data.forEach((item: BookingDetail, idx: number) => {
       doc.text(`Booking ${idx + 1}`, 10, y);
       y += 10;
       doc.text(`Guest: ${item.guestName}`, 10, y);
@@ -244,21 +256,21 @@ const HOSSBookings: React.FC = () => {
 
   const filteredData = useMemo(() => {
     if (!hossBookings) return [];
-    let result = hossBookings;
+    let result = [...hossBookings];
 
     if (filters.status) {
-      result = result.filter((item) => item.status.toLowerCase() === filters.status.toLowerCase());
+      result = result.filter((item: BookingDetail) => item.status.toLowerCase() === filters.status.toLowerCase());
     }
     if (filters.startDate) {
-      result = result.filter((item) => new Date(item.checkIn) >= new Date(filters.startDate));
+      result = result.filter((item: BookingDetail) => new Date(item.checkIn) >= new Date(filters.startDate));
     }
     if (filters.endDate) {
-      result = result.filter((item) => new Date(item.checkOut) <= new Date(filters.endDate));
+      result = result.filter((item: BookingDetail) => new Date(item.checkOut) <= new Date(filters.endDate));
     }
     if (deferredSearchQuery) {
       const lowerQuery = deferredSearchQuery.toLowerCase();
       result = result.filter(
-        (item) =>
+        (item: BookingDetail) =>
           item.guestName.toLowerCase().includes(lowerQuery) ||
           item.hotelName.toLowerCase().includes(lowerQuery) ||
           item.plan.toLowerCase().includes(lowerQuery) ||
@@ -271,9 +283,9 @@ const HOSSBookings: React.FC = () => {
 
   const totals = useMemo(
     () => ({
-      totalBill: filteredData.reduce((sum, item) => sum + (item.totalBill || 0), 0),
-      advance: filteredData.reduce((sum, item) => sum + (parseFloat(item.advance?.toString() || "0") || 0), 0),
-      due: filteredData.reduce((sum, item) => sum + ((item.totalBill || 0) - (parseFloat(item.advance?.toString() || "0") || 0)), 0),
+      totalBill: filteredData.reduce((sum: number, item: BookingDetail) => sum + (item.totalBill || 0), 0),
+      advance: filteredData.reduce((sum: number, item: BookingDetail) => sum + (parseFloat(item.advance?.toString() || "0") || 0), 0),
+      due: filteredData.reduce((sum: number, item: BookingDetail) => sum + ((item.totalBill || 0) - (parseFloat(item.advance?.toString() || "0") || 0)), 0),
     }),
     [filteredData]
   );
