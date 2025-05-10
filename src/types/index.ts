@@ -56,13 +56,17 @@ export interface BookingDetail {
   checkOut: string;
   hotelName: string;
   status: string;
-  totalBill: number;
+  totalBill?: number;
   pax?: string | number;
   noOfRooms?: number | string;
   extraBed?: number | string;
   kitchen?: string;
   advance?: number | string;
   search?: string;
+  db?: number | string; // Double bed rooms
+  tb?: number | string; // Triple bed rooms
+  fb?: number | string; // Four bed rooms
+  extra?: number | string; // Extra beds
 }
 
 export interface FilterDetail {
