@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, queryOptions } from '@tanstack/react-query'; 
 import { fetchEnquiryData, fetchHotels } from "../services/ApiService";
 import { Enquiry } from "../types";
 import { useState, useMemo, useCallback, useEffect, useDeferredValue } from "react";
@@ -35,17 +35,27 @@ const EnquiryPage: React.FC = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const itemsPerPage = 10;
 
-  const { data: enquiries, error, isLoading, refetch } = useQuery<Enquiry[] | undefined>({
+  const {
+    data: enquiries,
+    error,
+    isLoading,
+    isSuccess,
+    isError,
+    refetch,
+  } = useQuery<Enquiry[], Error>({
     queryKey: ["enquiries"],
     queryFn: fetchEnquiryData,
     retry: 2,
-    onSuccess: () => {
-      toast.success("Enquiries loaded successfully");
-    },
-    onError: (err: any) => {
-      toast.error(`Failed to load enquiries: ${err.message}`);
-    },
   });
+  
+  // Handle toast side-effects
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success("Enquiries loaded successfully");
+    } else if (isError && error) {
+      toast.error(`Failed to load enquiries: ${error.message}`);
+    }
+  }, [isSuccess, isError, error]);
 
   const { data: hotels } = useQuery<string[]>({
     queryKey: ["hotels"],

@@ -51,7 +51,6 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ viewMode, searchQ
   // Transform bookings into FullCalendar events
   const events = useMemo(() => {
     return filteredBookings.map((booking) => ({
-      id: booking.id || `${booking.guestName}-${booking.checkIn}`,
       title: `${booking.guestName} (${booking.plan})`,
       start: booking.checkIn,
       end: booking.checkOut,
