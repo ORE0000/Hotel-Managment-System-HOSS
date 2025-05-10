@@ -501,7 +501,7 @@ const Rate = () => {
               }),
               new docx.TableRow({
                 children: [
-                  new docx.TableCell調查({ children: [new docx.Paragraph('Location')] }),
+                  new docx.TableCell({ children: [new docx.Paragraph('Location')] }),
                   new docx.TableCell({ children: [new docx.Paragraph(hotelOverview.location)] })
                 ]
               }),

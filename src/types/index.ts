@@ -6,7 +6,9 @@ export interface CalendarData {
 }
 
 export interface BookingFormData {
+  dateBooked: string;
   guestName: string;
+  contact?: string;
   plan: string;
   checkIn: string;
   checkOut: string;
@@ -15,12 +17,35 @@ export interface BookingFormData {
   totalBill: number;
   guests?: number;
   action?: string;
+  pax?: string;
+  db?: string;
+  tb?: string;
+  fb?: string;
+  extraBed?: string;
+  kitchen?: string;
+  dbRate?: string;
+  tbRate?: string;
+  fbRate?: string;
+  extraRate?: string;
+  kitchenRate?: string;
+  dbDiscount?: string;
+  tbDiscount?: string;
+  fbDiscount?: string;
+  extraDiscount?: string;
+  kitchenDiscount?: string;
+  advance?: string;
+  cashIn?: string;
+  paymentMethod?: string;
 }
 
 export interface Summary {
   totalBookings: number;
   totalRevenue: number;
   occupancyRate: number;
+  revenue: number;
+  advance: number;
+  due: number;
+  expenses: number;
 }
 
 export interface BookingDetail {
@@ -32,7 +57,7 @@ export interface BookingDetail {
   hotelName: string;
   status: string;
   totalBill: number;
-  pax?: number | string;
+  pax?: string | number;
   noOfRooms?: number | string;
   extraBed?: number | string;
   kitchen?: string;

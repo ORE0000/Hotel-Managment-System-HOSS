@@ -6,23 +6,9 @@ import { FiCalendar, FiCopy, FiRefreshCw } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { format, parseISO } from "date-fns";
 import { toast } from "react-toastify";
+import { BookingDetail } from "../types";
 
-interface Booking {
-  guestName: string;
-  hotelName: string;
-  checkIn: string;
-  checkOut: string;
-  status: string;
-  mealPlan?: string;
-  plan?: string;
-  pax?: string;
-  noOfRooms?: number;
-  extraBed?: number;
-  kitchen?: string;
-  totalBill: number;
-  advance?: number;
-}
-
+// Use the BookingDetail interface from index.ts
 const BookingDetails: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,7 +21,7 @@ const BookingDetails: React.FC = () => {
     const start = params.get("startDate");
     const end = params.get("endDate");
     const today = new Date().toISOString().split("T")[0];
-    
+
     if (start && /^\d{4}-\d{2}-\d{2}$/.test(start)) {
       setStartDate(start);
       if (end && /^\d{4}-\d{2}-\d{2}$/.test(end)) {
@@ -47,7 +33,7 @@ const BookingDetails: React.FC = () => {
     }
   }, [location, navigate]);
 
-  const { data: bookingDetails, error, isLoading, refetch } = useQuery<Booking[]>({
+  const { data: bookingDetails, error, isLoading, refetch } = useQuery<BookingDetail[]>({
     queryKey: ["bookingDetails", startDate, endDate],
     queryFn: () => fetchBookingDetails(startDate, endDate),
     enabled: shouldFetch && !!startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate),
@@ -99,19 +85,19 @@ const BookingDetails: React.FC = () => {
     }
   };
 
-  const formatBookingText = (booking: Booking) => {
+  const formatBookingText = (booking: BookingDetail) => {
     return `🏨 *Booking*\n
 👤 *Guest:* ${booking.guestName}\n
 📅 *Check-in:* ${booking.checkIn}\n
 📅 *Check-out:* ${booking.checkOut}\n
 🏨 *Hotel:* ${booking.hotelName}\n
-🧑‍🤝‍🧑 *PAX:* ${booking.pax || "N/A"}\n
-🏠 *Rooms:* ${booking.noOfRooms !== undefined ? booking.noOfRooms : "N/A"}\n
-🛏️ *Extra Bed:* ${booking.extraBed !== undefined ? booking.extraBed : "N/A"}\n
-🍽️ *Kitchen:* ${booking.kitchen || "N/A"}\n
-💰 *Advance:* ${booking.advance !== undefined ? booking.advance : "N/A"}\n
+🧑‍🤝‍🧑 *PAX:* ${booking.pax ?? "N/A"}\n
+🏠 *Rooms:* ${booking.noOfRooms ?? "N/A"}\n
+🛏️ *Extra Bed:* ${booking.extraBed ?? "N/A"}\n
+🍽️ *Kitchen:* ${booking.kitchen ?? "N/A"}\n
+💰 *Advance:* ${booking.advance ?? "N/A"}\n
 🔄 *Status:* ${booking.status}\n
-🥗 *Meal Plan:* ${booking.mealPlan || booking.plan || "N/A"}\n
+🥗 *Meal Plan:* ${booking.mealPlan ?? booking.plan ?? "N/A"}\n
 💳 *Total Bill:* ₹${booking.totalBill}`;
   };
 
@@ -123,7 +109,7 @@ const BookingDetails: React.FC = () => {
           Booking Details for {startDate && format(parseISO(startDate), "MMMM d, yyyy")}
           {endDate && ` to ${format(parseISO(endDate), "MMMM d, yyyy")}`}
         </h2>
-        
+
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="flex gap-2">
             <input
@@ -194,7 +180,7 @@ const BookingDetails: React.FC = () => {
 
       {!isLoading && bookingDetails && bookingDetails.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {bookingDetails.map((item: Booking, idx: number) => (
+          {bookingDetails.map((item: BookingDetail, idx: number) => (
             <div
               key={idx}
               className="glass-card p-5 rounded-xl hover:shadow-lg transition-all duration-300 relative"
@@ -242,23 +228,23 @@ const BookingDetails: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Meal Plan:</span>
-                  <span className="font-medium">{item.mealPlan || item.plan || "N/A"}</span>
+                  <span className="font-medium">{item.mealPlan ?? item.plan ?? "N/A"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">PAX:</span>
-                  <span className="font-medium">{item.pax || "N/A"}</span>
+                  <span className="font-medium">{item.pax ?? "N/A"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Rooms:</span>
-                  <span className="font-medium">{item.noOfRooms !== undefined ? item.noOfRooms : "N/A"}</span>
+                  <span className="font-medium">{item.noOfRooms ?? "N/A"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Extra Bed:</span>
-                  <span className="font-medium">{item.extraBed !== undefined ? item.extraBed : "N/A"}</span>
+                  <span className="font-medium">{item.extraBed ?? "N/A"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Kitchen:</span>
-                  <span className="font-medium">{item.kitchen || "N/A"}</span>
+                  <span className="font-medium">{item.kitchen ?? "N/A"}</span>
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-[var(--border-color)]">
@@ -268,7 +254,7 @@ const BookingDetails: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Advance:</span>
-                  <span className="font-medium">{item.advance !== undefined ? item.advance : "N/A"}</span>
+                  <span className="font-medium">{item.advance ?? "N/A"}</span>
                 </div>
               </div>
             </div>
