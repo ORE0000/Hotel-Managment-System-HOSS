@@ -1,7 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchFilterDetails, fetchHotels } from '../services/ApiService';
 import { FilterDetail } from '../types';
-import { useState, useMemo, useCallback, useDeferredValue } from 'react';
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+} from 'react';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -59,21 +65,31 @@ const FilterDetailsPage: React.FC = () => {
     queryKey: ['filterDetails'],
     queryFn: () => fetchFilterDetails({}),
     retry: 2,
-    onSuccess: () => {
-      toast.success('Filter data loaded successfully');
-    },
-    onError: (err: Error) => {
-      toast.error(`Failed to load filter data: ${err.message}`);
-    },
   });
+
+  // Handle onSuccess and onError with useEffect
+  useEffect(() => {
+    if (filterDetails) {
+      toast.success('Filter data loaded successfully');
+    }
+  }, [filterDetails]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(`Failed to load filter data: ${error.message}`);
+    }
+  }, [error]);
 
   const { data: hotels, isLoading: hotelsLoading } = useQuery<string[]>({
     queryKey: ['hotels'],
     queryFn: fetchHotels,
-    onError: (err: Error) => {
-      toast.error(`Failed to load hotels: ${err.message}`);
-    },
   });
+
+  useEffect(() => {
+    if (hotelsLoading === false && hotels === undefined) {
+      toast.error('Failed to load hotels');
+    }
+  }, [hotels, hotelsLoading]);
 
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
@@ -97,10 +113,14 @@ const FilterDetailsPage: React.FC = () => {
   };
 
   const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearchQuery(value);
-      setPage(1);
-    }, 200, { leading: true, trailing: true }),
+    debounce(
+      (value: string) => {
+        setSearchQuery(value);
+        setPage(1);
+      },
+      200,
+      { leading: true, trailing: true }
+    ),
     []
   );
 
@@ -129,13 +149,17 @@ const FilterDetailsPage: React.FC = () => {
     if (selectedRows.size === filteredData.length) {
       setSelectedRows(new Set());
     } else {
-      const allIndices = filteredData.map((_: FilterDetail, idx: number) => idx);
+      const allIndices = filteredData.map(
+        (_: FilterDetail, idx: number) => idx
+      );
       setSelectedRows(new Set(allIndices));
     }
   };
 
   const copySelectedRows = () => {
-    const selectedData = filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx));
+    const selectedData = filteredData.filter((_: FilterDetail, idx: number) =>
+      selectedRows.has(idx)
+    );
     if (selectedData.length === 0) {
       toast.warn('No rows selected to copy');
       return;
@@ -194,7 +218,9 @@ const FilterDetailsPage: React.FC = () => {
   const downloadCSV = () => {
     const data =
       selectedRows.size > 0
-        ? filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx))
+        ? filteredData.filter((_: FilterDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
         : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
@@ -249,7 +275,9 @@ const FilterDetailsPage: React.FC = () => {
   const downloadJSON = () => {
     const data =
       selectedRows.size > 0
-        ? filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx))
+        ? filteredData.filter((_: FilterDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
         : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
@@ -269,7 +297,9 @@ const FilterDetailsPage: React.FC = () => {
   const downloadPDF = () => {
     const data =
       selectedRows.size > 0
-        ? filteredData.filter((_: FilterDetail, idx: number) => selectedRows.has(idx))
+        ? filteredData.filter((_: FilterDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
         : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
@@ -332,27 +362,32 @@ const FilterDetailsPage: React.FC = () => {
       );
     }
     if (filters.status) {
-      result = result.filter((item: FilterDetail) =>
-        item.status.toLowerCase() === filters.status.toLowerCase()
+      result = result.filter(
+        (item: FilterDetail) =>
+          item.status.toLowerCase() === filters.status.toLowerCase()
       );
     }
     if (filters.startDate) {
-      result = result.filter((item: FilterDetail) =>
-        new Date(item.checkIn) >= new Date(filters.startDate)
+      result = result.filter(
+        (item: FilterDetail) =>
+          new Date(item.checkIn) >= new Date(filters.startDate)
       );
     }
     if (filters.endDate) {
-      result = result.filter((item: FilterDetail) =>
-        new Date(item.checkOut) <= new Date(filters.endDate)
+      const end = new Date(filters.endDate);
+      result = result.filter(
+        (item: FilterDetail) => new Date(item.checkOut) <= end
       );
     }
+
     if (deferredSearchQuery) {
       const lowerQuery = deferredSearchQuery.toLowerCase();
-      result = result.filter((item: FilterDetail) =>
-        item.name.toLowerCase().includes(lowerQuery) ||
-        item.hotel.toLowerCase().includes(lowerQuery) ||
-        item.plan.toLowerCase().includes(lowerQuery) ||
-        item.status.toLowerCase().includes(lowerQuery)
+      result = result.filter(
+        (item: FilterDetail) =>
+          item.name.toLowerCase().includes(lowerQuery) ||
+          item.hotel.toLowerCase().includes(lowerQuery) ||
+          item.plan.toLowerCase().includes(lowerQuery) ||
+          item.status.toLowerCase().includes(lowerQuery)
       );
     }
 
