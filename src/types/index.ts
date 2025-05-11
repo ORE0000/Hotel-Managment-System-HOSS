@@ -61,7 +61,7 @@ export interface BookingDetail {
   noOfRooms?: number | string;
   extraBed?: number | string;
   kitchen?: string;
-  advance?: number | string;
+  advance?: number;
   search?: string;
   db?: number | string; // Double bed rooms
   tb?: number | string; // Triple bed rooms

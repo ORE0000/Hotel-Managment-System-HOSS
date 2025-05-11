@@ -1085,7 +1085,9 @@ const Dashboard: React.FC = () => {
               <h3 className="text-xl font-semibold text-center">
                 Booking Created Successfully!
               </h3>
-              <p className="text-sm text-center mt-2 opacity-90">
+              <p
+                className="text-sm text-center mt-2 opacity-90"
+              >
                 Your booking has been added to the system.
               </p>
               <div className="mt-6 flex justify-center">

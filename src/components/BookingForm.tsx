@@ -119,7 +119,11 @@ const bookingSchema = z
 
 type FormData = z.infer<typeof bookingSchema>;
 
-const BookingForm: React.FC = () => {
+interface BookingFormProps {
+  onBookingSuccess: () => void;
+}
+
+const BookingForm: React.FC<BookingFormProps> = ({ onBookingSuccess }) => {
   const [useCustomHotel, setUseCustomHotel] = useState(false);
   const [calculated, setCalculated] = useState({
     days: '0',
@@ -195,6 +199,7 @@ const BookingForm: React.FC = () => {
         reset();
         setUseCustomHotel(false);
         setCalculated({ days: '0', bill: '0.00', due: '0.00' });
+        onBookingSuccess(); // Call the prop to notify parent component
       } else {
         toast.error(data.error || 'Failed to submit booking.');
       }
@@ -387,7 +392,7 @@ Due Amount: ₹${calculated.due}
     setShowSubmitDialog(true);
   };
 
-  const confirmSubmit = () => {
+  const confirmSubmit = ()=> {
     if (!formDataToSubmit) return;
 
     // Convert DD-MM-YYYY to YYYY-MM-DD for backend compatibility

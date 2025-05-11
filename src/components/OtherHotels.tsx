@@ -114,7 +114,7 @@ const OtherHotels: React.FC = () => {
   // Filter hotels based on search term, category, and partners
   const filteredHotels = hotelData.filter(hotel => {
     const matchesSearch = hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         hotel.address.toLowerCase().includes(searchTerm.toLowerCase());
+                        hotel.address.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "all" || hotel.category === filterCategory;
     const matchesPartners = !filterPartners || hotel.partners;
     
@@ -133,39 +133,39 @@ const OtherHotels: React.FC = () => {
     setFilterPartners(e.target.checked);
   };
 
-  // Function to render star ratings
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
+  // // Function to render star ratings
+  // const renderStars = (rating: number) => {
+  //   const stars = [];
+  //   const fullStars = Math.floor(rating);
+  //   const hasHalfStar = rating % 1 !== 0;
     
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<FiStar key={`full-${i}`} className="text-yellow-500 fill-current" />);
-    }
+  //   // for (let i = 0; i < fullStars; i++) {
+  //   //   stars.push(<FiStar key={`full-${i}`} className="text-yellow-500 fill-current" />);
+  //   // }
     
-    if (hasHalfStar) {
-      stars.push(
-        <span key="half" className="relative">
-          <FiStar className="text-gray-300" />
-          <span className="absolute top-0 left-0 overflow-hidden w-1/2">
-            <FiStar className="text-yellow-500 fill-current" />
-          </span>
-        </span>
-      );
-    }
+  //   // if (hasHalfStar) {
+  //   //   stars.push(
+  //   //     <span key="half" className="relative">
+  //   //       <FiStar className="text-gray-300" />
+  //   //       <span className="absolute top-0 left-0 overflow-hidden w-1/2">
+  //   //         <FiStar className="text-yellow-500 fill-current" />
+  //   //       </span>
+  //   //     </span>
+  //   //   );
+  //   // }
     
-    const remainingStars = 5 - stars.length;
-    for (let i = 0; i < remainingStars; i++) {
-      stars.push(<FiStar key={`empty-${i}`} className="text-gray-300" />);
-    }
+  //   // const remainingStars = 5 - stars.length;
+  //   // for (let i = 0; i < remainingStars; i++) {
+  //   //   stars.push(<FiStar key={`empty-${i}`} className="text-gray-300" />);
+  //   // }
     
-    return (
-      <div className="flex">
-        {stars}
-        <span className="ml-1 text-sm text-[var(--text-secondary)]">{rating.toFixed(1)}</span>
-      </div>
-    );
-  };
+  //   return (
+  //     <div className="flex">
+  //       {stars}
+  //       <span className="ml-1 text-sm text-[var(--text-secondary)]">{rating.toFixed(1)}</span>
+  //     </div>
+  //   );
+  // };
 
   return (
     <div className="w-full max-w-7xl mx-auto">
@@ -234,7 +234,7 @@ const OtherHotels: React.FC = () => {
             transition={{ duration: 0.4, delay: index * 0.1 }}
             className="bg-[var(--card-bg)] rounded-xl shadow-lg overflow-hidden"
           >
-            {/* Hotel Card Header */}
+            {/* Hotel Card Header
             <div className="p-4 border-b border-[var(--border-color)]">
               <div className="flex justify-between items-start">
                 <h3 className="text-lg font-semibold text-[var(--text-primary)]">{hotel.name}</h3>
@@ -251,7 +251,7 @@ const OtherHotels: React.FC = () => {
               <div className="mt-1 text-sm text-[var(--text-secondary)]">
                 Distance from HOSS: {hotel.distance}
               </div>
-            </div>
+            </div> */}
             
             {/* Hotel Card Body */}
             <div className="p-4">

@@ -59,7 +59,7 @@ interface TooltipProps {
   onBookingClick: (booking: BookingDetail) => void;
 }
 
-const CalendarView: React.FC = () => {
+const CalendarView = () => {
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [viewDate, setViewDate] = useState<Date>(new Date());
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -113,7 +113,6 @@ const CalendarView: React.FC = () => {
     refetchOnWindowFocus: view !== 'day',
   });
 
-  // Handle error and success in the component
   useEffect(() => {
     if (error) {
       toast.error(`Failed to load bookings: ${error.message}`);
@@ -168,6 +167,7 @@ const CalendarView: React.FC = () => {
     if (percentage > 0) return 'availability-low';
     return 'availability-none';
   };
+
   const getBookingsForDate = (
     date: Date,
     bookings: BookingDetail[] | undefined
@@ -309,7 +309,7 @@ const CalendarView: React.FC = () => {
 
   const copyBookingDetails = () => {
     if (!selectedBooking) return;
-    const text = `Guest: ${selectedBooking.guestName}\nPlan: ${selectedBooking.plan}\nCheck-In: ${selectedBooking.checkIn}\nCheck-Out: ${selectedBooking.checkOut}\nHotel: ${selectedBooking.hotelName}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms: ${selectedBooking.noOfRooms || 'N/A'}\nExtra Bed: ${selectedBooking.extraBed || 'N/A'}\nKitchen: ${selectedBooking.kitchen || 'N/A'}\nStatus: ${selectedBooking.status}\nTotal Bill: ₹${selectedBooking.totalBill || 'N/A'}\nAdvance: ₹${selectedBooking.advance || '0'}\nDue: ₹${selectedBooking.totalBill - (selectedBooking.advance || 0) || '0'}`;
+    const text = `Guest: ${selectedBooking.guestName}\nPlan: ${selectedBooking.plan}\nCheck-In: ${selectedBooking.checkIn}\nCheck-Out: ${selectedBooking.checkOut}\nHotel: ${selectedBooking.hotelName}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms: ${selectedBooking.noOfRooms || 'N/A'}\nExtra Bed: ${selectedBooking.extraBed || 'N/A'}\nKitchen: ${selectedBooking.kitchen || 'N/A'}\nStatus: ${selectedBooking.status}\nTotal Bill: ₹${selectedBooking.totalBill ?? 'N/A'}\nAdvance: ₹${selectedBooking.advance || '0'}\nDue: ₹${(selectedBooking.totalBill ?? 0) - (selectedBooking.advance || 0)}`;
     navigator.clipboard.writeText(text);
     toast.success('Booking details copied to clipboard');
   };
@@ -329,13 +329,14 @@ const CalendarView: React.FC = () => {
     doc.text(`Extra Bed: ${selectedBooking.extraBed || 'N/A'}`, 10, 90);
     doc.text(`Kitchen: ${selectedBooking.kitchen || 'N/A'}`, 10, 100);
     doc.text(`Status: ${selectedBooking.status}`, 10, 110);
-    doc.text(`Total Bill: ₹${selectedBooking.totalBill || 'N/A'}`, 10, 120);
+    doc.text(`Total Bill: ₹${selectedBooking.totalBill ?? 'N/A'}`, 10, 120);
     doc.text(`Advance: ₹${selectedBooking.advance || '0'}`, 10, 130);
     doc.text(
-      `Due: ₹${selectedBooking.totalBill - (selectedBooking.advance || 0) || '0'}`,
+      `Due: ₹${(selectedBooking.totalBill ?? 0) - (selectedBooking.advance || 0)}`,
       10,
       140
     );
+
     doc.save(
       `booking_${selectedBooking.guestName}_${selectedBooking.checkIn}.pdf`
     );
@@ -365,8 +366,8 @@ const CalendarView: React.FC = () => {
       totalBill: number | string | undefined,
       advance: number | string | undefined
     ) => {
-      const total = parseFloat(totalBill?.toString() || '0');
-      const adv = parseFloat(advance?.toString() || '0');
+      const total = parseFloat(totalBill?.toString() || '0') || 0;
+      const adv = parseFloat(advance?.toString() || '0') || 0;
       return total - adv;
     };
 
@@ -438,17 +439,38 @@ const CalendarView: React.FC = () => {
                     Total Bill
                   </p>
                   <p className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
-                    ₹{booking.totalBill || 'N/A'}
+                    ₹{booking.totalBill ?? 'N/A'}
                   </p>
                 </div>
                 <div className="p-2 sm:p-3 bg-[var(--card-bg)] rounded-lg">
                   <p className="text-sm text-[var(--text-secondary)]">Due</p>
                   <p className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
-                    ₹{calculateDue(booking.totalBill, booking.advance) || '0'}
+                    ₹{calculateDue(booking.totalBill, booking.advance)}
                   </p>
                 </div>
               </div>
-              {/* Rest of the modal remains unchanged */}
+              <div className="flex justify-end space-x-2 sm:space-x-3">
+                <motion.button
+                  onClick={copyBookingDetails}
+                  className="btn-primary text-xs sm:text-sm flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Copy booking details"
+                >
+                  <FiCopy className="inline" />
+                  Copy
+                </motion.button>
+                <motion.button
+                  onClick={printBookingDetails}
+                  className="btn-primary text-xs sm:text-sm flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Download booking details as PDF"
+                >
+                  <FiDownload className="inline" />
+                  PDF
+                </motion.button>
+              </div>
             </div>
           ) : (
             <p className="text-[var(--text-secondary)] text-center text-sm sm:text-base">
@@ -480,7 +502,7 @@ const CalendarView: React.FC = () => {
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex justify-between items-start mb-2 sm:mb-3">
+        <div className="flex justify-between items-start mb-2 sm:mb-2">
           <h4 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
             Bookings for{' '}
             <span className="text-gradient">{format(date, 'MMM d')}</span>
@@ -592,6 +614,87 @@ const CalendarView: React.FC = () => {
     );
   };
 
+  const Day: React.FC<{
+    date: Date;
+    isOtherMonth: boolean;
+    currentDate: Date;
+    onClick?: (date: Date, el: HTMLElement) => void;
+  }> = ({ date, isOtherMonth, currentDate, onClick }) => {
+    const dayBookings = getBookingsForDate(date, filteredBookings || []);
+    const availability = calculateAvailability(date, filteredBookings || []);
+    const availabilityClass = getAvailabilityClass(availability.percentage);
+
+    const statusCounts = {
+      Confirmed: 0,
+      Hold: 0,
+      Cancelled: 0,
+    };
+
+    dayBookings.forEach((booking) => {
+      statusCounts[booking.status as keyof typeof statusCounts]++;
+    });
+
+    return (
+      <motion.div
+        className={`calendar-day p-2 sm:p-3 rounded-lg glass-card ${
+          isOtherMonth
+            ? 'bg-[var(--card-bg)] text-[var(--text-secondary)] opacity-50'
+            : 'bg-[var(--card-bg)] hover:bg-[var(--sidebar-hover)] cursor-pointer'
+        } ${availabilityClass} ${
+          isSameDay(date, currentDate) && !isOtherMonth
+            ? 'border-2 border-[var(--icon-bg-blue)]'
+            : ''
+        }`}
+        onClick={() =>
+          !isOtherMonth &&
+          onClick &&
+          onClick(
+            date,
+            document.getElementById(`day-${format(date, 'yyyy-MM-dd')}`) ||
+              document.createElement('div')
+          )
+        }
+        onDoubleClick={() => !isOtherMonth && setIsBookingModalOpen(true)}
+        id={`day-${format(date, 'yyyy-MM-dd')}`}
+        role="button"
+        aria-label={`View bookings for ${format(date, 'MMMM d, yyyy')}`}
+        whileHover={{
+          scale: 1.03,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <div className="calendar-day-content">
+          <div className="day-number text-right font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+            {date.getDate()}
+          </div>
+          {!isOtherMonth && dayBookings.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1 sm:mt-2 justify-end">
+              {Object.entries(statusCounts).map(
+                ([status, count]) =>
+                  count > 0 && (
+                    <motion.div
+                      key={status}
+                      className={`booking-indicator w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${getStatusClass(
+                        status
+                      )}`}
+                      title={`${count} ${status} booking(s)`}
+                      whileHover={{ scale: 1.2 }}
+                    ></motion.div>
+                  )
+              )}
+            </div>
+          )}
+          {!isOtherMonth && (
+            <div className="text-xs text-right mt-1 sm:mt-2 text-[var(--text-secondary)]">
+              {availability.available} avail
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  };
+
   const Calendar: React.FC = () => {
     const renderMonthView = () => {
       const currentDate = new Date();
@@ -663,87 +766,6 @@ const CalendarView: React.FC = () => {
       );
     };
 
-    const Day: React.FC<{
-      date: Date;
-      isOtherMonth: boolean;
-      currentDate: Date;
-      onClick?: (date: Date, el: HTMLElement) => void;
-    }> = ({ date, isOtherMonth, currentDate, onClick }) => {
-      const dayBookings = getBookingsForDate(date, filteredBookings || []);
-      const availability = calculateAvailability(date, filteredBookings || []);
-      const availabilityClass = getAvailabilityClass(availability.percentage);
-
-      const statusCounts = {
-        Confirmed: 0,
-        Hold: 0,
-        Cancelled: 0,
-      };
-
-      dayBookings.forEach((booking) => {
-        statusCounts[booking.status as keyof typeof statusCounts]++;
-      });
-
-      return (
-        <motion.div
-          className={`calendar-day p-2 sm:p-3 rounded-lg glass-card ${
-            isOtherMonth
-              ? 'bg-[var(--card-bg)] text-[var(--text-secondary)] opacity-50'
-              : 'bg-[var(--card-bg)] hover:bg-[var(--sidebar-hover)] cursor-pointer'
-          } ${availabilityClass} ${
-            isSameDay(date, currentDate) && !isOtherMonth
-              ? 'border-2 border-[var(--icon-bg-blue)]'
-              : ''
-          }`}
-          onClick={() =>
-            !isOtherMonth &&
-            onClick &&
-            onClick(
-              date,
-              document.getElementById(`day-${format(date, 'yyyy-MM-dd')}`) ||
-                document.createElement('div')
-            )
-          }
-          onDoubleClick={() => !isOtherMonth && setIsBookingModalOpen(true)}
-          id={`day-${format(date, 'yyyy-MM-dd')}`}
-          role="button"
-          aria-label={`View bookings for ${format(date, 'MMMM d, yyyy')}`}
-          whileHover={{
-            scale: 1.03,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <div className="calendar-day-content">
-            <div className="day-number text-right font-semibold text-sm sm:text-base text-[var(--text-primary)]">
-              {date.getDate()}
-            </div>
-            {!isOtherMonth && dayBookings.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1 sm:mt-2 justify-end">
-                {Object.entries(statusCounts).map(
-                  ([status, count]) =>
-                    count > 0 && (
-                      <motion.div
-                        key={status}
-                        className={`booking-indicator w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${getStatusClass(
-                          status
-                        )}`}
-                        title={`${count} ${status} booking(s)`}
-                        whileHover={{ scale: 1.2 }}
-                      ></motion.div>
-                    )
-                )}
-              </div>
-            )}
-            {!isOtherMonth && (
-              <div className="text-xs text-right mt-1 sm:mt-2 text-[var(--text-secondary)]">
-                {availability.available} avail
-              </div>
-            )}
-          </div>
-        </motion.div>
-      );
-    };
-
     const renderWeekView = () => {
       const start = startOfWeek(viewDate, { weekStartsOn: 0 });
       const days: JSX.Element[] = [];
@@ -758,10 +780,10 @@ const CalendarView: React.FC = () => {
           percentage > 70
             ? 'bg-[var(--icon-bg-green)]'
             : percentage > 40
-              ? 'bg-[var(--icon-bg-yellow)]'
-              : percentage > 0
-                ? 'bg-[var(--icon-bg-blue)]'
-                : 'bg-[var(--icon-bg-purple)]';
+            ? 'bg-[var(--icon-bg-yellow)]'
+            : percentage > 0
+            ? 'bg-[var(--icon-bg-blue)]'
+            : 'bg-[var(--icon-bg-purple)]';
 
         days.push(
           <motion.div
@@ -769,14 +791,28 @@ const CalendarView: React.FC = () => {
             className="flex-1 min-w-[120px] sm:min-w-[160px] glass-card rounded-lg p-3 sm:p-4"
             whileHover={{ scale: 1.02 }}
           >
-            {/* Other JSX remains unchanged */}
-            <div
-              className="space-y-2 sm:space-y-3"
-              draggable={true}
-              onDragStart={(e: React.DragEvent<HTMLDivElement>) =>
-                e.dataTransfer.setData('date', day.toISOString())
-              }
-            >
+            <div className="text-center mb-2 sm:mb-3">
+              <div className="text-xs sm:text-sm text-[var(--text-secondary)]">
+                {format(day, 'EEE')}
+              </div>
+              <div className="text-sm sm:text-base font-semibold text-[var(--text-primary)]">
+                {format(day, 'MMM d')}
+              </div>
+              <div className="w-full bg-[var(--input-bg)] rounded-full h-2 sm:h-3 mt-1 sm:mt-2">
+                <motion.div
+                  className={`${availabilityColor} h-2 sm:h-3 rounded-full`}
+                  style={{ width: `${percentage}%` }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ duration: 0.5 }}
+                ></motion.div>
+              </div>
+              <div className="text-xs text-[var(--text-secondary)] mt-1">
+                {availability.available} of {availability.total} available
+              </div>
+            </div>
+
+            <div className="space-y-2 sm:space-y-3">
               {dayBookings.length === 0 ? (
                 <motion.div
                   className="p-2 sm:p-3 text-center text-xs sm:text-sm text-[var(--text-secondary)] cursor-pointer hover:text-[var(--icon-bg-blue)] glass-card rounded-lg"
@@ -801,16 +837,16 @@ const CalendarView: React.FC = () => {
                       booking.status
                     )}`}
                     onClick={() => handleBookingClick(booking)}
-                    draggable={true}
-                    onDragStart={(e: React.DragEvent<HTMLDivElement>) =>
-                      e.dataTransfer.setData('booking', JSON.stringify(booking))
-                    }
                     whileHover={{
                       y: -2,
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                     }}
                   >
-                    {/* Booking content remains unchanged */}
+                    <div className="font-medium truncate">{booking.guestName}</div>
+                    <div className="flex justify-between mt-1">
+                      <span className="truncate">{booking.hotelName}</span>
+                      <span>{booking.noOfRooms} rooms</span>
+                    </div>
                   </motion.div>
                 ))
               )}
@@ -829,197 +865,79 @@ const CalendarView: React.FC = () => {
     };
 
     const renderDayView = () => {
-      const normalizedViewDate = startOfDay(viewDate);
-      const dayBookings = getBookingsForDate(
-        normalizedViewDate,
-        filteredBookings || []
-      );
-      const availability = calculateAvailability(
-        normalizedViewDate,
-        filteredBookings || []
-      );
+      const dayBookings = getBookingsForDate(viewDate, filteredBookings || []);
+      const availability = calculateAvailability(viewDate, filteredBookings || []);
       const percentage = Math.max(0, Math.min(100, availability.percentage));
       const availabilityColor =
         percentage > 70
           ? 'bg-[var(--icon-bg-green)]'
           : percentage > 40
-            ? 'bg-[var(--icon-bg-yellow)]'
-            : percentage > 0
-              ? 'bg-[var(--icon-bg-blue)]'
-              : 'bg-[var(--icon-bg-purple)]';
-
-      const bookingsByHotel: { [key: string]: BookingDetail[] } = {};
-      dayBookings.forEach((booking) => {
-        if (!bookingsByHotel[booking.hotelName]) {
-          bookingsByHotel[booking.hotelName] = [];
-        }
-        bookingsByHotel[booking.hotelName].push(booking);
-      });
+          ? 'bg-[var(--icon-bg-yellow)]'
+          : percentage > 0
+          ? 'bg-[var(--icon-bg-blue)]'
+          : 'bg-[var(--icon-bg-purple)]';
 
       return (
-        <div id="day-view" className="glass-card rounded-lg p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-bold text-gradient">
-              {format(normalizedViewDate, 'EEEE, MMMM d, yyyy')}
-            </h3>
-          </div>
-          <div className="mb-4 sm:mb-6 glass-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
-                Room Availability
-              </h4>
-              <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
-                Total Rooms: {availability.total}
-              </span>
+        <div id="day-view" className="p-4 sm:p-6">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="text-sm sm:text-base text-[var(--text-secondary)]">
+              {format(viewDate, 'EEEE')}
             </div>
-            <div className="w-full bg-[var(--input-bg)] rounded-full h-2 sm:h-3 mt-2 sm:mt-3">
+            <div className="text-lg sm:text-xl font-semibold text-[var(--text-primary)]">
+              {format(viewDate, 'MMMM d, yyyy')}
+            </div>
+            <div className="w-full max-w-xs mx-auto bg-[var(--input-bg)] rounded-full h-3 sm:h-4 mt-2 sm:mt-3">
               <motion.div
-                className={`${availabilityColor} h-2 sm:h-3 rounded-full`}
+                className={`${availabilityColor} h-3 sm:h-4 rounded-full`}
                 style={{ width: `${percentage}%` }}
                 initial={{ width: 0 }}
                 animate={{ width: `${percentage}%` }}
                 transition={{ duration: 0.5 }}
               ></motion.div>
             </div>
-            <div className="flex justify-between text-xs text-[var(--text-secondary)] mt-1 sm:mt-2">
-              <span>Available: {availability.available}</span>
-              <span>Booked: {availability.booked}</span>
+            <div className="text-xs sm:text-sm text-[var(--text-secondary)] mt-2">
+              {availability.available} of {availability.total} available
             </div>
           </div>
+
           <div className="space-y-3 sm:space-y-4">
             {dayBookings.length === 0 ? (
               <motion.div
-                className="text-center py-8 sm:py-12 text-[var(--text-secondary)]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
+                className="p-3 sm:p-4 text-center text-sm sm:text-base text-[var(--text-secondary)] cursor-pointer hover:text-[var(--icon-bg-blue)] glass-card rounded-lg"
+                onClick={() =>
+                  handleDayClick(
+                    viewDate,
+                    document.getElementById('day-view') ||
+                      document.createElement('div')
+                  )
+                }
+                whileHover={{ scale: 1.05 }}
+                aria-label="Add booking"
               >
-                <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 text-[var(--icon-color)]">
-                  <FiCalendar />
-                </div>
-                <div className="text-base sm:text-lg mb-4 sm:mb-6">
-                  No bookings for this day
-                </div>
-                <motion.button
-                  className="btn-primary text-sm sm:text-base"
-                  onClick={() =>
-                    handleDayClick(
-                      normalizedViewDate,
-                      document.getElementById('day-view') ||
-                        document.createElement('div')
-                    )
-                  }
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Add new booking"
-                >
-                  Add Booking
-                </motion.button>
+                No bookings. Click to add a booking.
               </motion.div>
             ) : (
-              Object.entries(bookingsByHotel).map(([hotel, hotelBookings]) => (
-                <div key={hotel} className="mb-6 sm:mb-8">
-                  <div className="flex justify-between items-center mb-3 sm:mb-4">
-                    <h4 className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">
-                      {hotel}
-                    </h4>
-                    <div className="text-xs sm:text-sm text-[var(--text-secondary)]">
-                      {hotelCapacity[hotel]?.totalRooms -
-                        hotelBookings
-                          .filter((b) => b.status !== 'Cancelled')
-                          .reduce(
-                            (sum, b) =>
-                              sum + parseInt(b.noOfRooms?.toString() || '0'),
-                            0
-                          )}{' '}
-                      of {hotelCapacity[hotel]?.totalRooms} rooms available
-                    </div>
+              dayBookings.map((booking) => (
+                <motion.div
+                  key={booking.guestName + booking.checkIn}
+                  className={`p-3 sm:p-4 rounded-lg text-sm sm:text-base glass-card ${getStatusTextClass(
+                    booking.status
+                  )}`}
+                  onClick={() => handleBookingClick(booking)}
+                  whileHover={{
+                    y: -2,
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  }}
+                >
+                  <div className="font-medium truncate">{booking.guestName}</div>
+                  <div className="flex justify-between mt-2">
+                    <span className="truncate">{booking.hotelName}</span>
+                    <span>{booking.noOfRooms} rooms</span>
                   </div>
-                  {hotelBookings.map((booking) => (
-                    <motion.div
-                      key={booking.guestName + booking.checkIn}
-                      className="p-3 sm:p-4 rounded-lg glass-card hover:shadow-md transition mb-3 sm:mb-4"
-                      whileHover={{
-                        y: -4,
-                        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)',
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-2 sm:mb-3">
-                        <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">
-                          {booking.guestName}
-                        </div>
-                        <div
-                          className={`status-badge ${getStatusTextClass(booking.status)} text-xs sm:text-sm`}
-                        >
-                          {booking.status}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
-                        {booking.noOfRooms && (
-                          <div>
-                            <span className="text-[var(--text-secondary)]">
-                              Rooms:
-                            </span>{' '}
-                            {booking.noOfRooms}
-                          </div>
-                        )}
-                        {booking.pax && (
-                          <div>
-                            <span className="text-[var(--text-secondary)]">
-                              Guests:
-                            </span>{' '}
-                            {booking.pax}
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-[var(--text-secondary)]">
-                            Check-in:
-                          </span>{' '}
-                          {booking.checkIn}
-                        </div>
-                        <div>
-                          <span className="text-[var(--text-secondary)]">
-                            Check-out:
-                          </span>{' '}
-                          {booking.checkOut}
-                        </div>
-                        <div>
-                          <span className="text-[var(--text-secondary)]">
-                            Total:
-                          </span>{' '}
-                          ₹{booking.totalBill}
-                        </div>
-                        {booking.advance && (
-                          <div>
-                            <span className="text-[var(--text-secondary)]">
-                              Advance:
-                            </span>{' '}
-                            ₹{booking.advance}
-                          </div>
-                        )}
-                        {booking.kitchen && (
-                          <div className="col-span-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[var(--border-color)]">
-                            <span className="text-[var(--text-secondary)]">
-                              Kitchen:
-                            </span>{' '}
-                            {booking.kitchen}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex justify-end space-x-2 sm:space-x-3 mt-3 sm:mt-4">
-                        <motion.button
-                          className="btn-primary text-xs sm:text-sm"
-                          onClick={() => handleBookingClick(booking)}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          aria-label="View booking details"
-                        >
-                          <FiPlus className="inline mr-1" /> View
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                  <div className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+                    Plan: {booking.plan} | PAX: {booking.pax || 'N/A'}
+                  </div>
+                </motion.div>
               ))
             )}
           </div>
@@ -1027,17 +945,15 @@ const CalendarView: React.FC = () => {
       );
     };
 
+    if (isLoading) {
+      return <SkeletonLoader viewType={view} />;
+    }
+
     return (
       <div>
-        {isLoading ? (
-          <SkeletonLoader viewType={view} />
-        ) : (
-          <>
-            {view === 'month' && renderMonthView()}
-            {view === 'week' && renderWeekView()}
-            {view === 'day' && renderDayView()}
-          </>
-        )}
+        {view === 'month' && renderMonthView()}
+        {view === 'week' && renderWeekView()}
+        {view === 'day' && renderDayView()}
       </div>
     );
   };
