@@ -302,14 +302,14 @@ const CalendarView = () => {
     return bookings.filter(
       (booking) =>
         booking.guestName?.toLowerCase().includes(lowerQuery) ||
-        booking.hotelName?.toLowerCase().includes(lowerQuery) ||
+        booking.hotel?.toLowerCase().includes(lowerQuery) ||
         booking.status?.toLowerCase().includes(lowerQuery)
     );
   }, [bookings, deferredSearchQuery]);
 
   const copyBookingDetails = () => {
     if (!selectedBooking) return;
-    const text = `Guest: ${selectedBooking.guestName}\nPlan: ${selectedBooking.plan}\nCheck-In: ${selectedBooking.checkIn}\nCheck-Out: ${selectedBooking.checkOut}\nHotel: ${selectedBooking.hotelName}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms: ${selectedBooking.noOfRooms || 'N/A'}\nExtra Bed: ${selectedBooking.extraBed || 'N/A'}\nKitchen: ${selectedBooking.kitchen || 'N/A'}\nStatus: ${selectedBooking.status}\nTotal Bill: ₹${selectedBooking.totalBill ?? 'N/A'}\nAdvance: ₹${selectedBooking.advance || '0'}\nDue: ₹${(selectedBooking.totalBill ?? 0) - (selectedBooking.advance || 0)}`;
+    const text = `Guest: ${selectedBooking.guestName}\nPlan: ${selectedBooking.plan}\nCheck-In: ${selectedBooking.checkIn}\nCheck-Out: ${selectedBooking.checkOut}\nHotel: ${selectedBooking.hotel}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms: ${selectedBooking.noOfRooms || 'N/A'}\nExtra Bed: ${selectedBooking.extraBed || 'N/A'}\nKitchen: ${selectedBooking.kitchen || 'N/A'}\nStatus: ${selectedBooking.status}\nTotal Bill: ₹${selectedBooking.totalBill ?? 'N/A'}\nAdvance: ₹${selectedBooking.advance || '0'}\nDue: ₹${(selectedBooking.totalBill ?? 0) - (selectedBooking.advance || 0)}`;
     navigator.clipboard.writeText(text);
     toast.success('Booking details copied to clipboard');
   };
@@ -323,7 +323,7 @@ const CalendarView = () => {
     doc.text(`Plan: ${selectedBooking.plan}`, 10, 30);
     doc.text(`Check-In: ${selectedBooking.checkIn}`, 10, 40);
     doc.text(`Check-Out: ${selectedBooking.checkOut}`, 10, 50);
-    doc.text(`Hotel: ${selectedBooking.hotelName}`, 10, 60);
+    doc.text(`Hotel: ${selectedBooking.hotel}`, 10, 60);
     doc.text(`PAX: ${selectedBooking.pax || 'N/A'}`, 10, 70);
     doc.text(`Rooms: ${selectedBooking.noOfRooms || 'N/A'}`, 10, 80);
     doc.text(`Extra Bed: ${selectedBooking.extraBed || 'N/A'}`, 10, 90);
@@ -406,7 +406,7 @@ const CalendarView = () => {
                   <DetailItem label="Plan" value={booking.plan} />
                   <DetailItem label="Check-In" value={booking.checkIn} />
                   <DetailItem label="Check-Out" value={booking.checkOut} />
-                  <DetailItem label="Hotel" value={booking.hotelName} />
+                  <DetailItem label="Hotel" value={booking.hotel} />
                 </div>
                 <div className="space-y-2">
                   <DetailItem label="PAX" value={booking.pax || 'N/A'} />
@@ -532,7 +532,7 @@ const CalendarView = () => {
                 {booking.guestName}
               </div>
               <div className="flex justify-between text-xs text-[var(--text-secondary)] mt-1">
-                <span className="truncate">{booking.hotelName}</span>
+                <span className="truncate">{booking.hotel}</span>
                 <span
                   className={`status-badge ${getStatusTextClass(booking.status)}`}
                 >
@@ -844,7 +844,7 @@ const CalendarView = () => {
                   >
                     <div className="font-medium truncate">{booking.guestName}</div>
                     <div className="flex justify-between mt-1">
-                      <span className="truncate">{booking.hotelName}</span>
+                      <span className="truncate">{booking.hotel}</span>
                       <span>{booking.noOfRooms} rooms</span>
                     </div>
                   </motion.div>
@@ -931,7 +931,7 @@ const CalendarView = () => {
                 >
                   <div className="font-medium truncate">{booking.guestName}</div>
                   <div className="flex justify-between mt-2">
-                    <span className="truncate">{booking.hotelName}</span>
+                    <span className="truncate">{booking.hotel}</span>
                     <span>{booking.noOfRooms} rooms</span>
                   </div>
                   <div className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
