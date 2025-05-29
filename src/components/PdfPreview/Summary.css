@@ -1,0 +1,381 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Root variables aligned with Billing.css for consistency */
+:root {
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --card-bg: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(209, 213, 219, 0.3);
+  --bg-primary: #f8fafc;
+}
+
+[data-theme="dark"] {
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --card-bg: rgba(31, 41, 55, 0.2);
+  --border-color: rgba(107, 114, 128, 0.3);
+  --bg-primary: #1f2937;
+}
+
+/* Container for summary previews (used in Enquiry.tsx for bulk summary PDF) */
+.summary-preview-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1122px !important; /* 297mm at 96dpi (297 * 3.78) */
+  height: auto; /* Allow height to adjust based on content */
+  visibility: hidden; /* Hidden by default, shown during PDF generation */
+}
+
+/* Styles for the bulk summary preview (landscape PDF via Generate Summary button) */
+.summary-preview-container .summary-preview {
+  width: 1122px !important; /* 297mm at 96dpi */
+  min-height: 794px !important; /* 210mm at 96dpi (210 * 3.78) */
+  padding: 38px !important; /* 10mm at 96dpi (10 * 3.78) */
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important; /* White background for PDF */
+  border: 1px solid var(--border-color) !important;
+  visibility: visible !important;
+  overflow: hidden !important;
+}
+
+/* Ensure the card container stretches to full width */
+.summary-preview .card {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Header styling */
+.summary-preview .text-center {
+  text-align: center !important;
+  margin-bottom: 57px !important; /* Increased from 38px to 57px (15mm) to prevent overlap */
+  border-bottom: 1px solid var(--border-color) !important;
+  padding-bottom: 19px !important; /* 5mm */
+}
+
+/* Ensure the table container does not constrain width */
+.summary-preview .overflow-x-auto {
+  overflow-x: visible !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Ensure the table stretches to fit the landscape width */
+.summary-preview table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  font-family: Arial, sans-serif !important;
+  margin: 0 !important;
+  padding-top: 19px !important; /* 5mm - Added to create separation from heading */
+}
+
+/* Table column styling for better spacing and readability */
+.summary-preview table th,
+.summary-preview table td {
+  padding: 11px 8px !important; /* 3mm 2mm at 96dpi */
+  word-wrap: break-word !important;
+  text-align: left !important;
+  font-size: 9pt !important;
+  border: 1px solid var(--border-color) !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+}
+
+/* Specific column adjustments for better proportion and readability */
+.summary-preview table th:nth-child(1),
+.summary-preview table td:nth-child(1) {
+  width: 12% !important; /* Guest Name */
+}
+
+.summary-preview table th:nth-child(2),
+.summary-preview table td:nth-child(2) {
+  width: 10% !important; /* Hotel */
+}
+
+.summary-preview table th:nth-child(3),
+.summary-preview table td:nth-child(3) {
+  width: 5% !important; /* PAX */
+}
+
+.summary-preview table th:nth-child(4),
+.summary-preview table td:nth-child(4),
+.summary-preview table th:nth-child(5),
+.summary-preview table td:nth-child(5),
+.summary-preview table th:nth-child(6),
+.summary-preview table td:nth-child(6),
+.summary-preview table th:nth-child(7),
+.summary-preview table td:nth-child(7),
+.summary-preview table th:nth-child(8),
+.summary-preview table td:nth-child(8) {
+  width: 5% !important; /* Room Counts */
+}
+
+.summary-preview table th:nth-child(9),
+.summary-preview table td:nth-child(9),
+.summary-preview table th:nth-child(10),
+.summary-preview table td:nth-child(10) {
+  width: 7% !important; /* Check-In, Check-Out */
+}
+
+.summary-preview table th:nth-child(11),
+.summary-preview table td:nth-child(11) {
+  width: 5% !important; /* Plan */
+}
+
+.summary-preview table th:nth-child(12),
+.summary-preview table td:nth-child(12) {
+  width: 6% !important; /* Bill Amount - Reduced from 7% to 6% */
+}
+
+.summary-preview table th:nth-child(13),
+.summary-preview table td:nth-child(13) {
+  width: 6% !important; /* Advance - Reduced from 7% to 6% */
+}
+
+.summary-preview table th:nth-child(14),
+.summary-preview table td:nth-child(14) {
+  width: 6% !important; /* Cash-In - Reduced from 7% to 6% */
+}
+
+.summary-preview table th:nth-child(15),
+.summary-preview table td:nth-child(15) {
+  width: 11% !important; /* Due - Increased from 8% to 11% to prevent cutoff */
+}
+
+.summary-preview table th:nth-child(16),
+.summary-preview table td:nth-child(16) {
+  width: 8% !important; /* Status */
+}
+
+/* Table header background */
+.summary-preview table thead tr {
+  background-color: #e6f0fa !important;
+}
+
+/* Table row styling */
+.summary-preview table tbody tr {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Status badge styling */
+.summary-preview table td .inline-block {
+  display: inline-block !important;
+  padding: 4px 8px !important; /* 1mm 2mm */
+  border-radius: 9999px !important;
+  font-size: 7pt !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  min-width: 60px !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+/* Totals section styling */
+.summary-preview .mt-6 {
+  margin-top: 38px !important; /* 10mm */
+  border-top: 1px solid var(--border-color) !important;
+  padding-top: 19px !important; /* 5mm */
+}
+
+.summary-preview .grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 19px !important; /* 5mm */
+  justify-content: space-between !important;
+  font-size: 9pt !important;
+}
+
+/* Footer styling */
+.summary-preview .mt-8 {
+  margin-top: 38px !important; /* 10mm */
+  border-top: 1px solid var(--border-color) !important;
+  padding-top: 19px !important; /* 5mm */
+  text-align: center !important;
+  font-size: 8pt !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Styles for single summary preview (via Action View -> Generate Summary) */
+#pdf-single-summary-preview {
+  width: 1122px !important; /* 297mm at 96dpi */
+  min-height: 794px !important; /* 210mm at 96dpi */
+  padding: 38px !important; /* 10mm */
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  visibility: visible !important;
+  overflow: hidden !important;
+}
+
+/* Ensure the card container stretches to full width in single summary */
+#pdf-single-summary-preview .card {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure the table container does not constrain width in single summary */
+#pdf-single-summary-preview .overflow-x-auto {
+  overflow-x: visible !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Table styling for single summary preview */
+#pdf-single-summary-preview table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  font-family: Arial, sans-serif !important;
+  margin: 0 !important;
+  padding-top: 19px !important; /* 5mm - Added to create separation from heading */
+}
+
+/* Header styling for single summary */
+#pdf-single-summary-preview .text-center {
+  text-align: center !important;
+  margin-bottom: 57px !important; /* Increased from 38px to 57px (15mm) to prevent overlap */
+  border-bottom: 1px solid var(--border-color) !important;
+  padding-bottom: 19px !important; /* 5mm */
+}
+
+/* Table column styling for single summary */
+#pdf-single-summary-preview table th,
+#pdf-single-summary-preview table td {
+  padding: 11px 8px !important;
+  word-wrap: break-word !important;
+  text-align: left !important;
+  font-size: 9pt !important;
+  border: 1px solid var(--border-color) !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+}
+
+/* Adjust specific columns for single summary to match bulk summary */
+#pdf-single-summary-preview table th:nth-child(1),
+#pdf-single-summary-preview table td:nth-child(1) {
+  width: 12% !important;
+}
+
+#pdf-single-summary-preview table th:nth-child(2),
+#pdf-single-summary-preview table td:nth-child(2) {
+  width: 10% !important;
+}
+
+#pdf-single-summary-preview table th:nth-child(3),
+#pdf-single-summary-preview table td:nth-child(3) {
+  width: 5% !important;
+}
+
+#pdf-single-summary-preview table th:nth-child(4),
+#pdf-single-summary-preview table td:nth-child(4),
+#pdf-single-summary-preview table th:nth-child(5),
+#pdf-single-summary-preview table td:nth-child(5),
+#pdf-single-summary-preview table th:nth-child(6),
+#pdf-single-summary-preview table td:nth-child(6),
+#pdf-single-summary-preview table th:nth-child(7),
+#pdf-single-summary-preview table td:nth-child(7),
+#pdf-single-summary-preview table th:nth-child(8),
+#pdf-single-summary-preview table td:nth-child(8) {
+  width: 5% !important;
+}
+
+#pdf-single-summary-preview table th:nth-child(9),
+#pdf-single-summary-preview table td:nth-child(9),
+#pdf-single-summary-preview table th:nth-child(10),
+#pdf-single-summary-preview table td:nth-child(10) {
+  width: 7% !important;
+}
+
+#pdf-single-summary-preview table th:nth-child(11),
+#pdf-single-summary-preview table td:nth-child(11) {
+  width: 5% !important;
+}
+
+#pdf-single-summary-preview table th:nth-child(12),
+#pdf-single-summary-preview table td:nth-child(12) {
+  width: 6% !important; /* Bill Amount - Reduced from 7% to 6% */
+}
+
+#pdf-single-summary-preview table th:nth-child(13),
+#pdf-single-summary-preview table td:nth-child(13) {
+  width: 6% !important; /* Advance - Reduced from 7% to 6% */
+}
+
+#pdf-single-summary-preview table th:nth-child(14),
+#pdf-single-summary-preview table td:nth-child(14) {
+  width: 6% !important; /* Cash-In - Reduced from 7% to 6% */
+}
+
+#pdf-single-summary-preview table th:nth-child(15),
+#pdf-single-summary-preview table td:nth-child(15) {
+  width: 11% !important; /* Due - Increased from 8% to 11% to prevent cutoff */
+}
+
+#pdf-single-summary-preview table th:nth-child(16),
+#pdf-single-summary-preview table td:nth-child(16) {
+  width: 8% !important; /* Status */
+}
+
+/* Table header background for single summary */
+#pdf-single-summary-preview table thead tr {
+  background-color: #e6f0fa !important;
+}
+
+/* Table row styling for single summary */
+#pdf-single-summary-preview table tbody tr {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Status badge styling for single summary */
+#pdf-single-summary-preview table td .inline-block {
+  display: inline-block !important;
+  padding: 4px 8px !important;
+  border-radius: 9999px !important;
+  font-size: 7pt !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  min-width: 60px !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+/* Totals section styling for single summary */
+#pdf-single-summary-preview .mt-6 {
+  margin-top: 38px !important;
+  border-top: 1px solid var(--border-color) !important;
+  padding-top: 19px !important;
+}
+
+/* Footer styling for single summary */
+#pdf-single-summary-preview .grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 19px !important;
+  justify-content: space-between !important;
+  font-size: 9pt !important;
+}
+
+/* Footer styling for single summary */
+#pdf-single-summary-preview .mt-8 {
+  margin-top: 38px !important;
+  border-top: 1px solid var(--border-color) !important;
+  padding-top: 19px !important;
+  text-align: center !important;
+  font-size: 8pt !important;
+  color: var(--text-secondary) !important;
+}

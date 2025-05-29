@@ -54,19 +54,62 @@ export interface BookingDetail {
   mealPlan?: string;
   checkIn: string;
   checkOut: string;
-  hotelName: string;
+  hotel: string;
   status: string;
   totalBill?: number;
   pax?: string | number;
   noOfRooms?: number | string;
   extraBed?: number | string;
   kitchen?: string;
-  advance?: number;
+  advance: number;
   search?: string;
-  db?: number | string; // Double bed rooms
-  tb?: number | string; // Triple bed rooms
-  fb?: number | string; // Four bed rooms
-  extra?: number | string; // Extra beds
+  db?: number ;
+  tb?: number ;
+  fb?: number ;
+  extra?: number;
+}
+
+export interface ExtendedBookingDetail {
+  dateBooked: string;
+  guestName: string;
+  contact: string;
+  hotel: string;
+  checkIn: string;
+  checkOut: string;
+  day: string;
+  pax: string;
+  roomName: {
+    doubleBed: string;
+    tripleBed: string;
+    fourBed: string;
+    extraBed: string;
+    kitchen: string;
+  };
+  roomRent: {
+    doubleBed: number;
+    tripleBed: number;
+    fourBed: number;
+    extraBed: number;
+    kitchen: number;
+  };
+  discount: {
+    doubleBed: number;
+    tripleBed: number;
+    fourBed: number;
+    extraBed: number;
+    kitchen: number;
+  };
+  billAmount?: number;
+  advance: number;
+  due: number;
+  cashIn: number;
+  modeOfPayment: string;
+  cashOut: number;
+  date: string;
+  toAccount: string;
+  scheme: string;
+  status: string;
+  plan: string;
 }
 
 export interface FilterDetail {
@@ -92,6 +135,7 @@ export interface Enquiry {
   guestName: string;
   contact: string;
   hotel: string;
+  plan: string;
   checkIn: string;
   checkOut: string;
   day: string;
@@ -132,4 +176,42 @@ export interface Enquiry {
 export interface RateType {
   roomType: string;
   rate: string;
+}
+
+export type FormType = 'customer' | 'restaurant' | 'hotel' | 'travel';
+export type ExportFormat = 'pdf' | 'excel' | 'json';
+
+export interface BillData {
+  guestName: string;
+  address: string;
+  idNumber: string;
+  contact: string;
+  hotel: string;
+  checkIn: string;
+  checkOut: string;
+  days: number;
+  pax: number;
+  doubleBedRoom: number;
+  tripleBedRoom: number;
+  fourBedRoom: number;
+  extraBedRoom: number;
+  kitchenRoom: number;
+  roomNumber: string;
+  ratePerGuest:number,
+  doubleBedRate: number;
+  tripleBedRate: number;
+  fourBedRate: number;
+  extraBedRate: number;
+  kitchenRate: number;
+  billAmount: number;
+  advance: number;
+  due: number;
+  status: string;
+  cashIn: number;
+  modeOfPayment: string;
+  cashOut: number;
+  date: string;
+  toAccount: string;
+  scheme: string;
+  formType: FormType;
 }

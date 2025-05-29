@@ -1,0 +1,389 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Root variables for consistency, aligned with global.css */
+:root {
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --card-bg: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-text: #1f2937;
+  --border-color: rgba(209, 213, 219, 0.3);
+  --icon-bg-indigo: #4f46e5;
+  --icon-bg-green: #10b981;
+  --icon-bg-purple: #7c3aed;
+  --icon-bg-teal: #14b8a6;
+  --icon-bg-yellow: #f59e0b;
+  --icon-bg-blue: #3b82f6;
+  --glow-color: rgba(79, 70, 229, 0.3);
+  --icon-color: #4f46e5;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #e2e8f0;
+  --button-text-light: #0f172a; /* Dark text for light mode */
+  --button-text-dark: #ffffff; /* White text for dark mode or colored buttons */
+  --generate-button-bg: #10b981;
+  --generate-button-hover-bg: #059669;
+  --generate-button-active-bg: #047857;
+  --edit-button-bg: #3b82f6;
+  --edit-button-hover-bg: #2563eb;
+  --edit-button-active-bg: #1d4ed8;
+  --new-button-bg: #14b8a6;
+  --new-button-hover-bg: #0d9488;
+  --new-button-active-bg: #0f766e;
+}
+
+/* Dark mode overrides, aligned with global.css */
+[data-theme="dark"] {
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --card-bg: rgba(31, 41, 55, 0.2);
+  --input-bg: rgba(55, 65, 81, 0.3);
+  --input-text: #f3f4f6;
+  --border-color: rgba(107, 114, 128, 0.3);
+  --bg-primary: #1f2937;
+  --bg-secondary: #374151;
+  --icon-color: #7c3aed;
+  --button-text-light: #f3f4f6;
+  --generate-button-bg: #10b981;
+  --generate-button-hover-bg: #059669;
+  --generate-button-active-bg: #047857;
+  --edit-button-bg: #3b82f6;
+  --edit-button-hover-bg: #2563eb;
+  --edit-button-active-bg: #1d4ed8;
+  --new-button-bg: #14b8a6;
+  --new-button-hover-bg: #0d9488;
+  --new-button-active-bg: #0f766e;
+}
+
+/* Active button style */
+.active-button {
+  background: var(--generate-button-active-bg) !important;
+  color: var(--button-text-dark) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Glassmorphic card */
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Neumorphic card */
+.neumorphic-card {
+  background: var(--card-bg);
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.15), -4px -4px 8px rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 10px;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* Neumorphic card for buttons - avoid background override */
+button.neumorphic-card {
+  background: none; /* Prevent background override for buttons */
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.15), -4px -4px 8px rgba(255, 255, 255, 0.05);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+}
+
+/* Neumorphic input */
+.neumorphic-input {
+  background: var(--input-bg);
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.15), inset -3px -3px 6px rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 8px;
+  color: var(--input-text);
+  transition: box-shadow 0.3s ease, border 0.3s ease;
+}
+
+.neumorphic-input:focus {
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.2), inset -2px -2px 4px rgba(255, 255, 255, 0.1);
+  outline: none;
+  border: 1px solid var(--icon-bg-indigo);
+}
+
+/* Input field */
+.input-field {
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--icon-bg-indigo);
+  box-shadow: 0 0 0 3px var(--glow-color);
+  background: var(--card-bg);
+}
+
+.input-field[readonly] {
+  background: var(--card-bg);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Modern gradient text for heading */
+.text-gradient-modern {
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: 'Poppins', sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Form container */
+.form-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Page heading */
+.page-heading {
+  background: linear-gradient(to right, var(--icon-bg-indigo), var(--icon-bg-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  padding: 0.25rem 0;
+  display: inline-block;
+}
+
+/* Shadow glow effect */
+.shadow-glow {
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
+/* Generic button fallback */
+button {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover {
+  box-shadow: 0 0 10px var(--glow-color);
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+/* Specific button/tab styles */
+.generate-button {
+  background: var(--generate-button-bg);
+  color: var(--button-text-dark);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.generate-button:hover {
+  background: var(--generate-button-hover-bg);
+  color: var(--button-text-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.generate-button:active,
+.generate-button.active {
+  background: var(--generate-button-active-bg);
+  color: var(--button-text-dark);
+  transform: scale(0.95);
+}
+
+/* Increased specificity for Edit and New buttons in the bill preview section */
+.bill-preview .edit-button {
+  background: var(--edit-button-bg) !important; /* Ensure background applies */
+  color: var(--button-text-dark);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.bill-preview .edit-button:hover {
+  background: var(--edit-button-hover-bg) !important;
+  color: var(--button-text-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.bill-preview .edit-button:active,
+.bill-preview .edit-button.active {
+  background: var(--edit-button-active-bg) !important;
+  color: var(--button-text-dark);
+  transform: scale(0.95);
+}
+
+.bill-preview .new-button {
+  background: var(--new-button-bg) !important; /* Ensure background applies */
+  color: var(--button-text-dark);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.bill-preview .new-button:hover {
+  background: var(--new-button-hover-bg) !important;
+  color: var(--button-text-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.bill-preview .new-button:active,
+.bill-preview .new-button.active {
+  background: var(--new-button-active-bg) !important;
+  color: var(--button-text-dark);
+  transform: scale(0.95);
+}
+
+/* Fallback text color for light mode in case background fails */
+[data-theme="light"] .bill-preview .edit-button,
+[data-theme="light"] .bill-preview .new-button {
+  color: var(--button-text-light); /* Fallback to dark text if background fails */
+}
+
+/* Ensure buttons in forms are styled correctly */
+form .generate-button {
+  background: var(--generate-button-bg);
+  color: var(--button-text-dark);
+}
+
+form .generate-button:hover {
+  background: var(--generate-button-hover-bg);
+  color: var(--button-text-dark);
+}
+
+form .generate-button:active {
+  background: var(--generate-button-active-bg);
+  color: var(--button-text-dark);
+}
+
+/* Tab-like styling for buttons if used as tabs */
+.tab-container {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 0.25rem;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+.generate-button.tab,
+.edit-button.tab,
+.new-button.tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.generate-button.tab:hover,
+.edit-button.tab:hover,
+.new-button.tab:hover {
+  background: var(--generate-button-hover-bg);
+  transform: translateY(-1px);
+}
+
+.generate-button.tab.active,
+.edit-button.tab.active,
+.new-button.tab.active {
+  background: var(--generate-button-active-bg);
+  color: var(--button-text-dark);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* PDF export styles */
+.pdf-export {
+  max-width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+}
+
+/* PDF preview container */
+.pdf-preview-container {
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+}
+
+/* PDF preview */
+.pdf-preview {
+  width: 200mm;
+  min-height: 287mm;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* Ensure tables fit within PDF */
+.pdf-preview table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Fix table cell padding for PDF */
+.pdf-preview table th,
+.pdf-preview table td {
+  padding: 2mm 1mm;
+  word-wrap: break-word;
+}
+
+/* Ensure heading alignment */
+.pdf-preview .text-center {
+  text-align: center !important;
+}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import SidebarDesktop from "./SidebarDesktop";
 import SidebarMobile from "./SidebarMobile";
-import { FiMenu } from "react-icons/fi";
+import Navbar from "./Navbar";
 
 const useMediaQuery = (query: string) => {
   const [matches, setMatches] = useState(false);
@@ -13,41 +13,55 @@ const useMediaQuery = (query: string) => {
       setMatches(media.matches);
     }
     const listener = () => setMatches(media.matches);
-    media.addListener(listener);
-    return () => media.removeListener(listener);
+    if (media.addEventListener) {
+      media.addEventListener('change', listener);
+      return () => media.removeEventListener('change', listener);
+    } else {
+      media.addListener(listener);
+      return () => media.removeListener(listener);
+    }
   }, [matches, query]);
 
   return matches;
 };
 
 const AppLayout: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Hidden by default on mobile
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
+  // Set sidebar state based on screen size
+  useEffect(() => {
+    if (isDesktop) {
+      setIsSidebarOpen(true); // Always visible on desktop
+    } else {
+      setIsSidebarOpen(false); // Hidden by default on mobile
+    }
+  }, [isDesktop]);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
-    <div className="flex min-h-screen bg-[var(--bg-primary)]">
-      {/* Conditionally render desktop sidebar only on desktop */}
-      {isDesktop && <SidebarDesktop />}
+    <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
+      {/* Top Navbar */}
+      <Navbar toggleSidebar={toggleSidebar} />
       
-      {/* Mobile Sidebar - only visible when isSidebarOpen is true */}
-      <SidebarMobile isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      
-      <div className="flex-1 md:ml-[var(--sidebar-desktop-width)] transition-all duration-300">
-        {/* Mobile Header - only visible on small screens */}
-        {!isDesktop && (
-          <header className="bg-[var(--sidebar-bg)] p-4 border-b border-[var(--border-color)] fixed top-0 left-0 right-0 z-40 backdrop-blur-md shadow-sm">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="text-[var(--text-primary)] text-2xl neumorphic-button p-2 rounded-lg"
-              aria-label="Open Sidebar"
-            >
-              <FiMenu />
-            </button>
-          </header>
-        )}
-        <main className="pt-16 md:pt-0 p-4 md:p-6 max-w-7xl mx-auto">
-          <Outlet />
-        </main>
+      <div className="flex flex-1">
+        {/* Desktop Sidebar */}
+        {isDesktop && <SidebarDesktop isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />}
+        
+        {/* Mobile Sidebar */}
+        {!isDesktop && <SidebarMobile isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />}
+        
+        <div
+          className={`flex-1 transition-all duration-300 main-content ${isDesktop ? 'ml-[var(--sidebar-desktop-width)]' : isSidebarOpen ? 'ml-[280px]' : 'ml-0'}`}
+          style={{ maxWidth: isDesktop ? 'calc(100% - var(--sidebar-desktop-width))' : '100%' }}
+        >
+          <main className="p-4 md:p-6 max-w-7xl mx-auto">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );

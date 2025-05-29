@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -8,14 +8,14 @@ import {
   FaCheckCircle, 
   FaInfoCircle, 
   FaBed, 
-  FaHome, 
+  FaHotel, 
   FaMapMarkerAlt, 
   FaCloudUploadAlt,
   FaDownload,
   FaEdit,
   FaSave
 } from 'react-icons/fa';
-import { FiFile, FiFileText, FiArrowLeft } from 'react-icons/fi';
+import { FiFile, FiFileText, FiArrowLeft, FiCalendar } from 'react-icons/fi';
 import { RateType } from '../types';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -24,7 +24,6 @@ import { saveAs } from 'file-saver';
 
 const Rate = () => {
   const [activeSeason, setActiveSeason] = useState<'peak' | 'off'>('peak');
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isFileHovered, setIsFileHovered] = useState(false);
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,18 +90,8 @@ const Rate = () => {
     totalRooms: '18 Rooms (55 Beds + 5 Extra Beds = 60 Total)',
     roomTypes: '7 Double-Bed, 6 Triple-Bed, 2 Four-Bed, 3 Five-Bed',
     location: 'Matli, NH 34 - Uttarkashi, Rishikesh-Gangotri Road',
-    contact: 'hotelomshivshankar@gmail.com\n9897402229, 9411383354'
+    contact: 'hotelomshivshankar@gmail.com\n9897409105, 9411380885'
   });
-
-  // Scroll effect for header
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleSeasonChange = (season: 'peak' | 'off') => {
     setActiveSeason(season);
@@ -532,54 +521,52 @@ const Rate = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header */}
-      <header className={`glass-card ${isScrolled ? 'shadow-xl' : ''} sticky top-0 z-50 transition-shadow duration-300`}>
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <motion.button 
-                onClick={() => navigate(-1)}
-                className="mr-4 text-[var(--text-primary)] hover:text-[var(--primary)] transition-colors"
-                aria-label="Go back"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <FiArrowLeft size={24} />
-              </motion.button>
-              <div>
-                <h1 className="text-3xl font-bold text-gradient">Hotel Om Shiv Shankar</h1>
-                <p className="text-[var(--text-secondary)] text-sm">Matli, NH 34 - Uttarkashi, Rishikesh-Gangotri Road</p>
-              </div>
-            </div>
-            <div className="flex space-x-6">
-              <a href="tel:9897402229" className="text-[var(--primary)] hover:text-[var(--primary-foreground)] flex items-center transition-colors">
-                <FaPhoneAlt className="mr-2" /> 9897402229
-              </a>
-              <a href="mailto:hotelomshivshankar@gmail.com" className="text-[var(--primary)] hover:text-[var(--primary-foreground)] flex items-center transition-colors">
-                <FaEnvelope className="mr-2" /> Email Us
-              </a>
-            </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 sticky top-0 bg-[var(--bg-primary)] z-10 py-4 px-4 sm:px-6">
+        <div className="flex items-center gap-2">
+          <motion.button 
+            onClick={() => navigate(-1)}
+            className="mr-3 text-[var(--text-primary)] hover:text-[var(--primary)] transition-colors"
+            aria-label="Go back"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <FiArrowLeft size={20} />
+          </motion.button>
+          <h2 className="text-2xl md:text-3xl font-bold text-gradient flex items-center gap-2">
+            <FaHotel className="text-indigo-500" size={24} />
+            Hotel Om Shiv Shankar Rates
+          </h2>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex gap-2">
+            <a href="tel:9897409105" className="btn-primary flex items-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-1 sm:py-2">
+              <FaPhoneAlt size={16} /> 9897409105
+            </a>
+            <a href="mailto:hotelomshivshankar@gmail.com" className="btn-secondary flex items-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-1 sm:py-2">
+              <FaEnvelope size={16} /> Email Us
+            </a>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <div className="flex flex-col lg:flex-row gap-12">
+      <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-7xl">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-12">
           {/* Main Rates Section */}
           <div className="w-full lg:w-2/3">
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="neumorphic-card rounded-2xl p-8"
+              className="neumorphic-card rounded-2xl p-6 sm:p-8"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-[var(--text-primary)]">Our Room Rates</h2>
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">Our Room Rates</h2>
                 <motion.button
                   onClick={() => toggleEditMode('rates')}
-                  className="btn-primary text-sm flex items-center"
+                  className="btn-primary text-sm flex items-center mt-3 sm:mt-0"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -589,15 +576,15 @@ const Rate = () => {
               </div>
               
               {/* Season Tabs */}
-              <div className="flex border-b border-[var(--border)] mb-8">
+              <div className="flex border-b border-[var(--border)] mb-6 sm:mb-8 overflow-x-auto">
                 <button 
-                  className={`px-6 py-3 text-lg font-semibold transition-all duration-300 ${activeSeason === 'peak' ? 'border-b-4 border-[var(--primary)] text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'}`}
+                  className={`px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg font-semibold transition-all duration-300 whitespace-nowrap ${activeSeason === 'peak' ? 'border-b-4 border-[var(--primary)] text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'}`}
                   onClick={() => handleSeasonChange('peak')}
                 >
                   Peak Season (May, June, Sept, Oct)
                 </button>
                 <button 
-                  className={`px-6 py-3 text-lg font-semibold transition-all duration-300 ${activeSeason === 'off' ? 'border-b-4 border-[var(--primary)] text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'}`}
+                  className={`px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg font-semibold transition-all duration-300 whitespace-nowrap ${activeSeason === 'off' ? 'border-b-4 border-[var(--primary)] text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'}`}
                   onClick={() => handleSeasonChange('off')}
                 >
                   Off Season (July, Aug, Nov-Apr)
@@ -606,45 +593,45 @@ const Rate = () => {
               
               {/* Rates Content */}
               <div className={activeSeason === 'peak' ? 'block' : 'hidden'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
                   {/* EP Rates */}
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4 }}
-                    className="glass-card rounded-xl p-6 card-hover"
+                    className="glass-card rounded-xl p-4 sm:p-6 card-hover"
                   >
-                    <h3 className="text-xl font-semibold text-[var(--primary)] mb-4">EP Rates (Room Only)</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)] mb-4">EP Rates (Room Only)</h3>
                     <div className="overflow-x-auto">
-                      <table className="modern-table">
+                      <table className="modern-table w-full">
                         <thead>
                           <tr>
-                            <th>Room Category</th>
-                            <th>Rate</th>
+                            <th className="text-sm sm:text-base">Room Category</th>
+                            <th className="text-sm sm:text-base">Rate</th>
                           </tr>
                         </thead>
                         <tbody>
                           {peakSeasonRates.ep.map((room, index) => (
                             <tr key={index}>
-                              <td data-label="Room Category">
+                              <td data-label="Room Category" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.roomType}
                                     onChange={(e) => handleRateChange('peak', 'ep', index, 'roomType', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.roomType
                                 )}
                               </td>
-                              <td data-label="Rate">
+                              <td data-label="Rate" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.rate}
                                     onChange={(e) => handleRateChange('peak', 'ep', index, 'rate', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.rate
@@ -662,39 +649,39 @@ const Rate = () => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
-                    className="glass-card rounded-xl p-6 card-hover"
+                    className="glass-card rounded-xl p-4 sm:p-6 card-hover"
                   >
-                    <h3 className="text-xl font-semibold text-[var(--primary)] mb-4">MAP Rates (Breakfast + One Meal)</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)] mb-4">MAP Rates (Breakfast + One Meal)</h3>
                     <div className="overflow-x-auto">
-                      <table className="modern-table">
+                      <table className="modern-table w-full">
                         <thead>
                           <tr>
-                            <th>Room Category</th>
-                            <th>Rate</th>
+                            <th className="text-sm sm:text-base">Room Category</th>
+                            <th className="text-sm sm:text-base">Rate</th>
                           </tr>
                         </thead>
                         <tbody>
                           {peakSeasonRates.map.map((room, index) => (
                             <tr key={index}>
-                              <td data-label="Room Category">
+                              <td data-label="Room Category" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.roomType}
                                     onChange={(e) => handleRateChange('peak', 'map', index, 'roomType', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.roomType
                                 )}
                               </td>
-                              <td data-label="Rate">
+                              <td data-label="Rate" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.rate}
                                     onChange={(e) => handleRateChange('peak', 'map', index, 'rate', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.rate
@@ -712,22 +699,22 @@ const Rate = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
-                  className="glass-card rounded-xl p-6 card-hover"
+                  className="glass-card rounded-xl p-4 sm:p-6 card-hover"
                 >
-                  <h3 className="text-xl font-semibold text-[var(--primary)] mb-4">Additional Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)] mb-4">Additional Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {additionalInfo.map((info, index) => (
                       <div key={index} className="flex items-start">
-                        <FaCheckCircle className="text-[var(--icon-bg-green)] mt-1 mr-3" />
+                        <FaCheckCircle className="text-[var(--icon-bg-green)] mt-1 mr-2 sm:mr-3" size={16} />
                         {editMode.rates ? (
                           <textarea
                             value={info}
                             onChange={(e) => handleAdditionalInfoChange(index, e.target.value)}
-                            className="textarea-field w-full"
+                            className="textarea-field w-full text-sm sm:text-base"
                             rows={3}
                           />
                         ) : (
-                          <span className="text-[var(--text-primary)]">{info}</span>
+                          <span className="text-[var(--text-primary)] text-sm sm:text-base">{info}</span>
                         )}
                       </div>
                     ))}
@@ -737,45 +724,45 @@ const Rate = () => {
               
               {/* Off Season Rates */}
               <div className={activeSeason === 'off' ? 'block' : 'hidden'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
                   {/* EP Rates */}
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4 }}
-                    className="glass-card rounded-xl p-6 card-hover"
+                    className="glass-card rounded-xl p-4 sm:p-6 card-hover"
                   >
-                    <h3 className="text-xl font-semibold text-[var(--primary)] mb-4">EP Rates (Room Only)</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)] mb-4">EP Rates (Room Only)</h3>
                     <div className="overflow-x-auto">
-                      <table className="modern-table">
+                      <table className="modern-table w-full">
                         <thead>
                           <tr>
-                            <th>Room Category</th>
-                            <th>Rate</th>
+                            <th className="text-sm sm:text-base">Room Category</th>
+                            <th className="text-sm sm:text-base">Rate</th>
                           </tr>
                         </thead>
                         <tbody>
                           {offSeasonRates.ep.map((room, index) => (
                             <tr key={index}>
-                              <td data-label="Room Category">
+                              <td data-label="Room Category" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.roomType}
                                     onChange={(e) => handleRateChange('off', 'ep', index, 'roomType', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.roomType
                                 )}
                               </td>
-                              <td data-label="Rate">
+                              <td data-label="Rate" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.rate}
                                     onChange={(e) => handleRateChange('off', 'ep', index, 'rate', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.rate
@@ -793,39 +780,39 @@ const Rate = () => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
-                    className="glass-card rounded-xl p-6 card-hover"
+                    className="glass-card rounded-xl p-4 sm:p-6 card-hover"
                   >
-                    <h3 className="text-xl font-semibold text-[var(--primary)] mb-4">MAP Rates (Breakfast + One Meal)</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)] mb-4">MAP Rates (Breakfast + One Meal)</h3>
                     <div className="overflow-x-auto">
-                      <table className="modern-table">
+                      <table className="modern-table w-full">
                         <thead>
                           <tr>
-                            <th>Room Category</th>
-                            <th>Rate</th>
+                            <th className="text-sm sm:text-base">Room Category</th>
+                            <th className="text-sm sm:text-base">Rate</th>
                           </tr>
                         </thead>
                         <tbody>
                           {offSeasonRates.map.map((room, index) => (
                             <tr key={index}>
-                              <td data-label="Room Category">
+                              <td data-label="Room Category" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.roomType}
                                     onChange={(e) => handleRateChange('off', 'map', index, 'roomType', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.roomType
                                 )}
                               </td>
-                              <td data-label="Rate">
+                              <td data-label="Rate" className="text-sm sm:text-base">
                                 {editMode.rates ? (
                                   <input
                                     type="text"
                                     value={room.rate}
                                     onChange={(e) => handleRateChange('off', 'map', index, 'rate', e.target.value)}
-                                    className="input-field w-full"
+                                    className="input-field w-full text-sm sm:text-base"
                                   />
                                 ) : (
                                   room.rate
@@ -843,22 +830,22 @@ const Rate = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
-                  className="glass-card rounded-xl p-6 card-hover"
+                  className="glass-card rounded-xl p-4 sm:p-6 card-hover"
                 >
-                  <h3 className="text-xl font-semibold text-[var(--primary)] mb-4">Additional Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)] mb-4">Additional Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {additionalInfo.map((info, index) => (
                       <div key={index} className="flex items-start">
-                        <FaCheckCircle className="text-[var(--icon-bg-green)] mt-1 mr-3" />
+                        <FaCheckCircle className="text-[var(--icon-bg-green)] mt-1 mr-2 sm:mr-3" size={16} />
                         {editMode.rates ? (
                           <textarea
                             value={info}
                             onChange={(e) => handleAdditionalInfoChange(index, e.target.value)}
-                            className="textarea-field w-full"
+                            className="textarea-field w-full text-sm sm:text-base"
                             rows={3}
                           />
                         ) : (
-                          <span className="text-[var(--text-primary)]">{info}</span>
+                          <span className="text-[var(--text-primary)] text-sm sm:text-base">{info}</span>
                         )}
                       </div>
                     ))}
@@ -871,13 +858,13 @@ const Rate = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 }}
-                className="bg-gradient-primary p-6 rounded-xl mt-8 card-hover"
+                className="bg-gradient-primary p-4 sm:p-6 rounded-xl mt-6 sm:mt-8 card-hover"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-white">Booking Policy</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold text-white">Booking Policy</h3>
                   <motion.button
                     onClick={() => toggleEditMode('bookingPolicy')}
-                    className="btn-secondary text-sm flex items-center"
+                    className="btn-secondary text-sm flex items-center mt-3 sm:mt-0"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -885,19 +872,19 @@ const Rate = () => {
                     {editMode.bookingPolicy ? 'Save' : 'Edit'}
                   </motion.button>
                 </div>
-                <ul className="space-y-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <ul className="space-y-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                   {bookingPolicy.map((policy, index) => (
                     <li key={index} className="flex items-start">
-                      <FaInfoCircle className="text-white mt-1 mr-3" />
+                      <FaInfoCircle className="text-white mt-1 mr-2 sm:mr-3" size={16} />
                       {editMode.bookingPolicy ? (
                         <textarea
                           value={policy}
                           onChange={(e) => handleBookingPolicyChange(index, e.target.value)}
-                          className="textarea-field w-full"
+                          className="textarea-field w-full text-sm sm:text-base"
                           rows={3}
                         />
                       ) : (
-                        <span className="text-white">{policy}</span>
+                        <span className="text-white text-sm sm:text-base">{policy}</span>
                       )}
                     </li>
                   ))}
@@ -909,13 +896,13 @@ const Rate = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.4 }}
-                className="glass-card p-8 rounded-xl mt-8 card-hover"
+                className="glass-card p-4 sm:p-8 rounded-xl mt-6 sm:mt-8 card-hover"
               >
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-semibold text-[var(--primary)]">Bank Details</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-[var(--primary)]">Bank Details</h3>
                   <motion.button
                     onClick={() => toggleEditMode('bankDetails')}
-                    className="btn-primary text-sm flex items-center"
+                    className="btn-primary text-sm flex items-center mt-3 sm:mt-0"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -923,68 +910,70 @@ const Rate = () => {
                     {editMode.bankDetails ? 'Save' : 'Edit'}
                   </motion.button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="glass-card p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="glass-card p-3 sm:p-4">
                     {editMode.bankDetails ? (
                       <>
-                        <p className="text-sm text-[var(--text-primary)]">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)]">
                           <span className="font-medium">Account Name:</span>
                           <input
                             type="text"
                             value={bankDetails.accountName}
-                            onChange={(e) => handleBankDetailsChange('accountName', e.target.value)}
-                            className="input-field w-full mt-1"
+                            onChange={(e
+
+) => handleBankDetailsChange('accountName', e.target.value)}
+                            className="input-field w-full mt-1 text-sm sm:text-base"
                           />
                         </p>
-                        <p className="text-sm text-[var(--text-primary)] mt-2">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)] mt-2">
                           <span className="font-medium">Account Number:</span>
                           <input
                             type="text"
                             value={bankDetails.accountNumber}
                             onChange={(e) => handleBankDetailsChange('accountNumber', e.target.value)}
-                            className="input-field w-full mt-1"
+                            className="input-field w-full mt-1 text-sm sm:text-base"
                           />
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-[var(--text-primary)]">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)]">
                           <span className="font-medium">Account Name:</span> {bankDetails.accountName}
                         </p>
-                        <p className="text-sm text-[var(--text-primary)]">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)] mt-2">
                           <span className="font-medium">Account Number:</span> {bankDetails.accountNumber}
                         </p>
                       </>
                     )}
                   </div>
-                  <div className="glass-card p-4">
+                  <div className="glass-card p-3 sm:p-4">
                     {editMode.bankDetails ? (
                       <>
-                        <p className="text-sm text-[var(--text-primary)]">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)]">
                           <span className="font-medium">IFSC Code:</span>
                           <input
                             type="text"
                             value={bankDetails.ifscCode}
                             onChange={(e) => handleBankDetailsChange('ifscCode', e.target.value)}
-                            className="input-field w-full mt-1"
+                            className="input-field w-full mt-1 text-sm sm:text-base"
                           />
                         </p>
-                        <p className="text-sm text-[var(--text-primary)] mt-2">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)] mt-2">
                           <span className="font-medium">Bank & Branch:</span>
                           <textarea
                             value={bankDetails.bankBranch}
                             onChange={(e) => handleBankDetailsChange('bankBranch', e.target.value)}
-                            className="textarea-field w-full mt-1"
+                            className="textarea-field w-full mt-1 text-sm sm:text-base"
                             rows={3}
                           />
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-[var(--text-primary)]">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)]">
                           <span className="font-medium">IFSC Code:</span> {bankDetails.ifscCode}
                         </p>
-                        <p className="text-sm text-[var(--text-primary)]">
+                        <p className="text-sm sm:text-base text-[var(--text-primary)] mt-2">
                           <span className="font-medium">Bank & Branch:</span> {bankDetails.bankBranch}
                         </p>
                       </>
@@ -1002,67 +991,67 @@ const Rate = () => {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="neumorphic-card rounded-2xl p-8 mb-8"
+              className="neumorphic-card rounded-2xl p-6 sm:p-8 mb-6 sm:mb-8"
             >
-              <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-6 flex items-center">
-                <FaDownload className="mr-3 text-[var(--primary)]" />
+              <h3 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] mb-4 sm:mb-6 flex items-center">
+                <FaDownload className="mr-2 sm:mr-3 text-[var(--primary)]" size={20} />
                 Download Rate Sheets
               </h3>
               
-              <div className="space-y-6 mb-8">
-                <div className="flex items-center justify-between glass-card p-4">
+              <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between glass-card p-3 sm:p-4">
                   <div>
-                    <h4 className="font-medium text-[var(--text-primary)]">Peak Season Rates</h4>
-                    <p className="text-sm text-[var(--text-secondary)]">Updated: May 1, 2025</p>
+                    <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base">Peak Season Rates</h4>
+                    <p className="text-xs sm:text-sm text-[var(--text-secondary)]">Updated: May 1, 2025</p>
                   </div>
-                  <div className="flex space-x-3">
+                  <div className="flex space-x-2 sm:space-x-3 mt-2 sm:mt-0">
                     <motion.button 
                       onClick={() => handleDownload('DOCX', 'Peak Season')}
-                      className="btn-primary text-sm flex items-center"
+                      className="btn-primary text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 sm:py-2"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <FiFileText className="mr-2" /> DOCX
+                      <FiFileText className="mr-1 sm:mr-2" size={16} /> DOCX
                     </motion.button>
                     <motion.button 
                       onClick={() => handleDownload('PDF', 'Peak Season')}
-                      className="btn-secondary text-sm flex items-center"
+                      className="btn-secondary text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 sm:py-2"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <FiFile className="mr-2" /> PDF
+                      <FiFile className="mr-1 sm:mr-2" size={16} /> PDF
                     </motion.button>
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between glass-card p-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between glass-card p-3 sm:p-4">
                   <div>
-                    <h4 className="font-medium text-[var(--text-primary)]">Off Season Rates</h4>
-                    <p className="text-sm text-[var(--text-secondary)]">Updated: May 1, 2025</p>
+                    <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base">Off Season Rates</h4>
+                    <p className="text-xs sm:text-sm text-[var(--text-secondary)]">Updated: May 1, 2025</p>
                   </div>
-                  <div className="flex space-x-3">
+                  <div className="flex space-x-2 sm:space-x-3 mt-2 sm:mt-0">
                     <motion.button 
                       onClick={() => handleDownload('DOCX', 'Off Season')}
-                      className="btn-primary text-sm flex items-center"
+                      className="btn-primary text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 sm:py-2"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <FiFileText className="mr-2" /> DOCX
+                      <FiFileText className="mr-1 sm:mr-2" size={16} /> DOCX
                     </motion.button>
                     <motion.button 
                       onClick={() => handleDownload('PDF', 'Off Season')}
-                      className="btn-secondary text-sm flex items-center"
+                      className="btn-secondary text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 sm:py-2"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <FiFile className="mr-2" /> PDF
+                      <FiFile className="mr-1 sm:mr-2" size={16} /> PDF
                     </motion.button>
                   </div>
                 </div>
               </div>
               
               <div 
-                className={`glass-card p-8 text-center cursor-pointer border-2 border-dashed ${isFileHovered ? 'border-[var(--primary)] bg-[var(--card)]' : 'border-[var(--border)]'}`}
+                className={`glass-card p-6 sm:p-8 text-center cursor-pointer border-2 border-dashed ${isFileHovered ? 'border-[var(--primary)] bg-[var(--card)]' : 'border-[var(--border)]'}`}
                 onClick={() => fileInputRef.current?.click()}
                 onMouseEnter={() => setIsFileHovered(true)}
                 onMouseLeave={() => setIsFileHovered(false)}
@@ -1078,14 +1067,14 @@ const Rate = () => {
                 <motion.div 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="mx-auto w-16 h-16 bg-[var(--card)] rounded-full flex items-center justify-center mb-4"
+                  className="mx-auto w-12 sm:w-16 h-12 sm:h-16 bg-[var(--card)] rounded-full flex items-center justify-center mb-3 sm:mb-4"
                 >
-                  <FaCloudUploadAlt className="text-[var(--primary)] text-2xl" />
+                  <FaCloudUploadAlt className="text-[var(--primary)] text-xl sm:text-2xl" />
                 </motion.div>
-                <h4 className="font-medium text-[var(--text-primary)] mb-2">Upload Updated Rate Sheet</h4>
-                <p className="text-sm text-[var(--text-secondary)] mb-4">DOCX or PDF files only</p>
+                <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base mb-2">Upload Updated Rate Sheet</h4>
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] mb-3 sm:mb-4">DOCX or PDF files only</p>
                 <motion.button 
-                  className="btn-primary"
+                  className="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-2"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -1099,13 +1088,13 @@ const Rate = () => {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="neumorphic-card rounded-2xl p-8"
+              className="neumorphic-card rounded-2xl p-6 sm:p-8"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-[var(--text-primary)]">Hotel Overview</h3>
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6">
+                <h3 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Hotel Overview</h3>
                 <motion.button
                   onClick={() => toggleEditMode('hotelOverview')}
-                  className="btn-primary text-sm flex items-center"
+                  className="btn-primary text-sm flex items-center mt-3 sm:mt-0"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -1113,85 +1102,92 @@ const Rate = () => {
                   {editMode.hotelOverview ? 'Save' : 'Edit'}
                 </motion.button>
               </div>
-              <div className="space-y-6">
-                <div className="flex items-center glass-card p-4">
-                  <div className="bg-gradient-primary p-3 rounded-full mr-4">
-                    <FaBed className="text-white" size={18} />
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-center glass-card p-3 sm:p-4">
+                  <div className="bg-gradient-primary p-2 sm:p-3 rounded-full mr-3 sm:mr-4">
+                    <FaBed className="text-white" size={16} />
                   </div>
-                  <div>
-                    <h4 className="font-medium text-[var(--text-primary)]">Total Rooms</h4>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base">Total Rooms</h4>
                     {editMode.hotelOverview ? (
                       <input
                         type="text"
                         value={hotelOverview.totalRooms}
                         onChange={(e) => handleHotelOverviewChange('totalRooms', e.target.value)}
-                        className="input-field w-full mt-1"
+                        className="input-field w-full mt-1 text-sm sm:text-base"
                       />
                     ) : (
-                      <p className="text-sm text-[var(--text-secondary)]">{hotelOverview.totalRooms}</p>
+                      <p className="text-xs sm:text-sm text-[var(--text-secondary)]">{hotelOverview.totalRooms}</p>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex items-center glass-card p-4">
-                  <div className="bg-gradient-primary p-3 rounded-full mr-4">
-                    <FaHome className="text-white" size={18} />
+                <div className="flex items-center glass-card p-3 sm:p-4">
+                  <div className="bg-gradient-primary p-2 sm:p-3 rounded-full mr-3 sm:mr-4">
+                    <FaHotel className="text-white" size={16} />
                   </div>
-                  <div>
-                    <h4 className="font-medium text-[var(--text-primary)]">Room Types</h4>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base">Room Types</h4>
                     {editMode.hotelOverview ? (
                       <textarea
                         value={hotelOverview.roomTypes}
                         onChange={(e) => handleHotelOverviewChange('roomTypes', e.target.value)}
-                        className="textarea-field w-full mt-1"
+                        className="textarea-field w-full mt-1 text-sm sm:text-base"
                         rows={3}
                       />
                     ) : (
-                      <p className="text-sm text-[var(--text-secondary)]">{hotelOverview.roomTypes}</p>
+                      <p className="text-xs sm:text-sm text-[var(--text-secondary)]">{hotelOverview.roomTypes}</p>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex items-center glass-card p-4">
-                  <div className="bg-gradient-primary p-3 rounded-full mr-4">
-                    <FaMapMarkerAlt className="text-white" size={18} />
+                <div className="flex items-center glass-card p-3 sm:p-4">
+                  <div className="bg-gradient-primary p-2 sm:p-3 rounded-full mr-3 sm:mr-4">
+                    <FaMapMarkerAlt className="text-white" size={16} />
                   </div>
-                  <div>
-                    <h4 className="font-medium text-[var(--text-primary)]">Location</h4>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base">Location</h4>
                     {editMode.hotelOverview ? (
                       <textarea
                         value={hotelOverview.location}
                         onChange={(e) => handleHotelOverviewChange('location', e.target.value)}
-                        className="textarea-field w-full mt-1"
+                        className="textarea-field w-full mt-1 text-sm sm:text-base"
                         rows={3}
                       />
                     ) : (
-                      <p className="text-sm text-[var(--text-secondary)]">{hotelOverview.location}</p>
+                      <p className="text-xs sm:text-sm text-[var(--text-secondary)]">{hotelOverview.location}</p>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex items-center glass-card p-4">
-                  <div className="bg-gradient-primary p-3 rounded-full mr-4">
-                    <FaEnvelope className="text-white" size={18} />
+                <div className="flex items-center glass-card p-3 sm:p-4">
+                  <div className="bg-gradient-primary p-2 sm:p-3 rounded-full mr-3 sm:mr-4">
+                    <FaEnvelope className="text-white" size={16} />
                   </div>
-                  <div>
-                    <h4 className="font-medium text-[var(--text-primary)]">Contact</h4>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-[var(--text-primary)] text-sm sm:text-base">Contact</h4>
                     {editMode.hotelOverview ? (
                       <textarea
                         value={hotelOverview.contact}
                         onChange={(e) => handleHotelOverviewChange('contact', e.target.value)}
-                        className="textarea-field w-full mt-1"
+                        className="textarea-field w-full mt-1 text-sm sm:text-base"
                         rows={3}
                       />
                     ) : (
-                      <p className="text-sm text-[var(--text-secondary)]">{hotelOverview.contact.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}</p>
+                      <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
+                        {hotelOverview.contact.split('\n').map((line, i) => (
+                          <span key={i}>
+                            {line}
+                            <br />
+                          </span>
+                        ))}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
             </motion.div>
-          </div>
+          </div> 
         </div>
       </main>
     </div>

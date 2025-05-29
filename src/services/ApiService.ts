@@ -5,7 +5,8 @@ import {
   Summary, 
   BookingDetail, 
   Enquiry,
-  FilterDetail 
+  FilterDetail,
+  ExtendedBookingDetail
 } from "../types";
 
 const WEB_APP_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -38,7 +39,11 @@ export const fetchSummaryData = async (): Promise<Summary> => {
     return response.data.data || {
       totalBookings: 0,
       totalRevenue: 0,
-      occupancyRate: 0
+      occupancyRate: 0,
+      revenue: 0,
+      advance: 0,
+      due: 0,
+      expenses: 0
     };
   } catch (error) {
     throw new Error(getErrorMessage(error));
@@ -74,7 +79,7 @@ export const fetchBookingDetails = async (startDate: string, endDate?: string): 
   if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     throw new Error("Valid startDate parameter is required in YYYY-MM-DD format");
   }
-  if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+  if (endDate && !/^\d{4}-\d{2}-\d{endDate}/.test(endDate)) {
     throw new Error("endDate must be in YYYY-MM-DD format if provided");
   }
   try {
@@ -127,7 +132,7 @@ export const fetchHotels = async (): Promise<string[]> => {
     );
     if (response.data.error) throw new Error(response.data.error);
     const hotels = Array.isArray(response.data.data)
-      ? [...new Set(response.data.data.map((item) => item.hotel).filter((hotel): hotel is string => typeof hotel === 'string'))]
+      ? [...new Set(response.data.data.map((item) => item.hotel).filter((hotel): hotel is string => !!hotel))]
       : [];
     return hotels;
   } catch (error) {
@@ -141,7 +146,7 @@ export const fetchHOSSBookings = async (filters: {
   endDate?: string;
   hotel?: string;
   search?: string;
-} = {}): Promise<BookingDetail[]> => {
+} = {}): Promise<ExtendedBookingDetail[]> => {
   try {
     const params = new URLSearchParams({ action: "getHOSSBookings" });
     if (filters.status) params.append("status", filters.status);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
@@ -6,12 +6,11 @@ import {
   fetchHOSSBookings,
   submitData,
 } from '../services/ApiService';
-import { Enquiry, BookingDetail } from '../types';
+import { Enquiry, ExtendedBookingDetail } from '../types';
 import {
   FiCalendar,
   FiSearch,
   FiPlus,
-  FiDownload,
   FiUser,
   FiCheckCircle,
   FiLogOut,
@@ -37,7 +36,7 @@ import {
   endOfWeek,
 } from 'date-fns';
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC = React.memo(() => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,17 +44,12 @@ const Dashboard: React.FC = () => {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isAllBookingsModalOpen, setIsAllBookingsModalOpen] = useState(false);
-  const [isBookingDetailModalOpen, setIsBookingDetailModalOpen] =
-    useState(false);
-  const [isEnquiryDetailModalOpen, setIsEnquiryDetailModalOpen] =
-    useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingDetail | null>(
-    null
-  );
+  const [isBookingDetailModalOpen, setIsBookingDetailModalOpen] = useState(false);
+  const [isEnquiryDetailModalOpen, setIsEnquiryDetailModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<ExtendedBookingDetail | null>(null);
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [showOtherHotels, setShowOtherHotels] = useState(false);
 
-  // Fetch Enquiries
   const {
     data: enquiries,
     error: enquiriesError,
@@ -66,18 +60,16 @@ const Dashboard: React.FC = () => {
     retry: 2,
   });
 
-  // Fetch HOSS Bookings
   const {
-    data: hossBookings,
+    data: hossBookings = [],
     error: bookingsError,
     isLoading: isBookingsLoading,
-  } = useQuery<BookingDetail[], Error>({
+  } = useQuery<ExtendedBookingDetail[], Error>({
     queryKey: ['hossBookings'],
     queryFn: () => fetchHOSSBookings({}),
     retry: 2,
   });
 
-  // Handle errors with useEffect
   useEffect(() => {
     if (enquiriesError) {
       toast.error(`Failed to load enquiries: ${enquiriesError.message}`);
@@ -87,7 +79,6 @@ const Dashboard: React.FC = () => {
     }
   }, [enquiriesError, bookingsError]);
 
-  // Refresh Mutation
   const refreshMutation = useMutation({
     mutationFn: submitData,
     onSuccess: () => {
@@ -99,14 +90,12 @@ const Dashboard: React.FC = () => {
     },
   });
 
-  // Set page loaded state after loading is complete
   useEffect(() => {
     if (!isBookingsLoading && !isEnquiriesLoading) {
       setIsPageLoaded(true);
     }
   }, [isBookingsLoading, isEnquiriesLoading]);
 
-  // Handle Booking Success
   const handleBookingSuccess = useCallback(() => {
     if (isPageLoaded) {
       setIsSuccessDialogOpen(true);
@@ -117,46 +106,47 @@ const Dashboard: React.FC = () => {
     }
   }, [isPageLoaded]);
 
-  // Clear Search
   const clearSearch = () => {
     setSearchQuery('');
   };
 
-  // Handle Sync Data
   const handleSyncData = () => {
     toast.info('Syncing data with external systems...');
     refreshMutation.mutate();
   };
 
-  // Open Booking Details Modal
-  const openBookingDetails = (booking: BookingDetail) => {
+  const openBookingDetails = (booking: ExtendedBookingDetail) => {
     setSelectedBooking(booking);
     setIsBookingDetailModalOpen(true);
+    setIsAllBookingsModalOpen(false);
   };
 
-  // Open Enquiry Details Modal
   const openEnquiryDetails = (enquiry: Enquiry) => {
     setSelectedEnquiry(enquiry);
     setIsEnquiryDetailModalOpen(true);
   };
 
-  // Copy Booking Details
   const copyBookingDetails = () => {
     if (!selectedBooking) return;
-    const text = `Guest: ${selectedBooking.guestName}\nPlan: ${selectedBooking.plan}\nCheck-In: ${selectedBooking.checkIn}\nCheck-Out: ${selectedBooking.checkOut}\nHotel: ${selectedBooking.hotelName}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms: ${selectedBooking.noOfRooms || 'N/A'}\nExtra Bed: ${selectedBooking.extraBed || 'N/A'}\nKitchen: ${selectedBooking.kitchen || 'N/A'}\nStatus: ${selectedBooking.status}\nAdvance: ₹${selectedBooking.advance || '0'}\nTotal Bill: ₹${selectedBooking.totalBill || '0'}`;
+    const rooms = [
+      selectedBooking.roomName?.doubleBed && selectedBooking.roomName.doubleBed !== '0' ? `Double Bed: ${selectedBooking.roomName.doubleBed}` : '',
+      selectedBooking.roomName?.tripleBed && selectedBooking.roomName.tripleBed !== '0' ? `Triple Bed: ${selectedBooking.roomName.tripleBed}` : '',
+      selectedBooking.roomName?.fourBed && selectedBooking.roomName.fourBed !== '0' ? `Four Bed: ${selectedBooking.roomName.fourBed}` : '',
+      selectedBooking.roomName?.extraBed && selectedBooking.roomName.extraBed !== '0' ? `Extra Bed: ${selectedBooking.roomName.extraBed}` : '',
+      selectedBooking.roomName?.kitchen && selectedBooking.roomName.kitchen !== '0' ? `Kitchen: ${selectedBooking.roomName.kitchen}` : '',
+    ].filter(Boolean).join('\n') || 'N/A';
+    const text = `Guest: ${selectedBooking.guestName || 'N/A'}\nPlan: ${selectedBooking.plan || 'N/A'}\nCheck-In: ${selectedBooking.checkIn || 'N/A'}\nCheck-Out: ${selectedBooking.checkOut || 'N/A'}\nHotel: ${selectedBooking.hotel || 'N/A'}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms:\n${rooms}\nStatus: ${selectedBooking.status || 'N/A'}\nAdvance: ₹${selectedBooking.advance?.toLocaleString() || '0'}\nBill Amount: ₹${selectedBooking.billAmount?.toLocaleString() || '0'}`;
     navigator.clipboard.writeText(text);
     toast.success('Booking details copied to clipboard');
   };
 
-  // Copy Enquiry Details
   const copyEnquiryDetails = () => {
     if (!selectedEnquiry) return;
-    const text = `Guest: ${selectedEnquiry.guestName}\nHotel: ${selectedEnquiry.hotel}\nCheck-In: ${selectedEnquiry.checkIn}\nCheck-Out: ${selectedEnquiry.checkOut}\nDays: ${selectedEnquiry.day}\nPAX: ${selectedEnquiry.pax}\nDouble Bed: ${selectedEnquiry.roomName.doubleBed}\nTriple Bed: ${selectedEnquiry.roomName.tripleBed}\nFour Bed: ${selectedEnquiry.roomName.fourBed}\nExtra Bed: ${selectedEnquiry.roomName.extraBed}\nKitchen: ${selectedEnquiry.roomName.kitchen}\nBill Amount: ₹${selectedEnquiry.billAmount.toLocaleString()}\nStatus: ${selectedEnquiry.status}`;
+    const text = `Guest: ${selectedEnquiry.guestName || 'N/A'}\nHotel: ${selectedEnquiry.hotel || 'N/A'}\nCheck-In: ${selectedEnquiry.checkIn || 'N/A'}\nCheck-Out: ${selectedEnquiry.checkOut || 'N/A'}\nDays: ${selectedEnquiry.day || 'N/A'}\nPAX: ${selectedEnquiry.pax || 'N/A'}\nDouble Bed: ${selectedEnquiry.roomName?.doubleBed || '0'}\nTriple Bed: ${selectedEnquiry.roomName?.tripleBed || '0'}\nFour Bed: ${selectedEnquiry.roomName?.fourBed || '0'}\nExtra Bed: ${selectedEnquiry.roomName?.extraBed || '0'}\nKitchen: ${selectedEnquiry.roomName?.kitchen || '0'}\nBill Amount: ₹${selectedEnquiry.billAmount?.toLocaleString() || '0'}\nStatus: ${selectedEnquiry.status || 'N/A'}`;
     navigator.clipboard.writeText(text);
     toast.success('Enquiry details copied to clipboard');
   };
 
-  // Filtered Recent Enquiries (Today's, Top 3)
   const recentEnquiries = useMemo(() => {
     if (!enquiries || !Array.isArray(enquiries)) return [];
     return enquiries
@@ -164,34 +154,30 @@ const Dashboard: React.FC = () => {
       .sort(
         (a: Enquiry, b: Enquiry) =>
           new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime()
-      )
-      .slice(0, 3);
+      );
   }, [enquiries]);
 
-  // Filtered Recent Bookings (Today's, Top 4)
   const recentBookings = useCallback(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) return [];
     return hossBookings
-      .filter((booking: BookingDetail) => isToday(new Date(booking.checkIn)))
+      .filter((booking: ExtendedBookingDetail) => isToday(new Date(booking.checkIn)))
       .sort(
-        (a: BookingDetail, b: BookingDetail) =>
+        (a: ExtendedBookingDetail, b: ExtendedBookingDetail) =>
           new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
       )
       .slice(0, 4);
   }, [hossBookings]);
 
-  // All Bookings for Today
   const allTodayBookings = useMemo(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) return [];
     return hossBookings
-      .filter((booking: BookingDetail) => isToday(new Date(booking.checkIn)))
+      .filter((booking: ExtendedBookingDetail) => isToday(new Date(booking.checkIn)))
       .sort(
-        (a: BookingDetail, b: BookingDetail) =>
+        (a: ExtendedBookingDetail, b: ExtendedBookingDetail) =>
           new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
       );
   }, [hossBookings]);
 
-  // Calculate trends based on actual data
   const calculateTrends = useCallback(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) {
       return {
@@ -208,13 +194,12 @@ const Dashboard: React.FC = () => {
     const weekStart = startOfWeek(today, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
 
-    // Check-ins
     const todayCheckIns = hossBookings.filter(
-      (b: BookingDetail) =>
+      (b: ExtendedBookingDetail) =>
         isToday(new Date(b.checkIn)) && b.status !== 'Cancelled'
     ).length;
     const yesterdayCheckIns = hossBookings.filter(
-      (b: BookingDetail) =>
+      (b: ExtendedBookingDetail) =>
         isYesterday(new Date(b.checkIn)) && b.status !== 'Cancelled'
     ).length;
     const checkInDiff = todayCheckIns - yesterdayCheckIns;
@@ -225,13 +210,12 @@ const Dashboard: React.FC = () => {
           ? `${checkInDiff} from yesterday`
           : 'No change from yesterday';
 
-    // Check-outs
     const todayCheckOuts = hossBookings.filter(
-      (b: BookingDetail) =>
+      (b: ExtendedBookingDetail) =>
         isToday(new Date(b.checkOut)) && b.status !== 'Cancelled'
     ).length;
     const yesterdayCheckOuts = hossBookings.filter(
-      (b: BookingDetail) =>
+      (b: ExtendedBookingDetail) =>
         isYesterday(new Date(b.checkOut)) && b.status !== 'Cancelled'
     ).length;
     const checkOutDiff = todayCheckOuts - yesterdayCheckOuts;
@@ -242,14 +226,13 @@ const Dashboard: React.FC = () => {
           ? `${checkOutDiff} from yesterday`
           : 'No change from yesterday';
 
-    // Occupancy Rate (compare current week with previous week)
     const TOTAL_ROOMS = 18;
     const calculateOccupancyForPeriod = (start: Date, end: Date) => {
       let totalOccupiedRooms = 0;
       const days = differenceInDays(end, start) + 1;
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const dailyBookings = hossBookings.filter((booking: BookingDetail) => {
+        const dailyBookings = hossBookings.filter((booking: ExtendedBookingDetail) => {
           if (booking.status === 'Cancelled') return false;
           const checkIn = new Date(booking.checkIn);
           const checkOut = new Date(booking.checkOut);
@@ -257,15 +240,15 @@ const Dashboard: React.FC = () => {
         });
 
         let dailyOccupiedRooms = 0;
-        dailyBookings.forEach((booking: BookingDetail) => {
-          const hotels = booking.hotelName
+        dailyBookings.forEach((booking: ExtendedBookingDetail) => {
+          const hotels = booking.hotel
             ?.split('/')
             ?.map((h) => h.trim()) || ['HOSS'];
           if (hotels.includes('HOSS')) {
             const rooms =
-              (parseInt(booking.db?.toString() || '0', 10) || 0) +
-              (parseInt(booking.tb?.toString() || '0', 10) || 0) +
-              (parseInt(booking.fb?.toString() || '0', 10) || 0);
+              (parseInt(booking.roomName?.doubleBed?.toString() || '0', 10) || 0) +
+              (parseInt(booking.roomName?.tripleBed?.toString() || '0', 10) || 0) +
+              (parseInt(booking.roomName?.fourBed?.toString() || '0', 10) || 0);
             dailyOccupiedRooms +=
               hotels.length === 1 ? rooms : rooms / hotels.length;
           }
@@ -294,23 +277,22 @@ const Dashboard: React.FC = () => {
           ? `${occupancyDiff}% this week`
           : 'No change this week';
 
-    // Revenue
     const todayRevenue = hossBookings
       .filter(
-        (b: BookingDetail) =>
+        (b: ExtendedBookingDetail) =>
           isToday(new Date(b.checkIn)) && b.status !== 'Cancelled'
       )
       .reduce(
-        (sum, b) => sum + (parseFloat(b.totalBill?.toString() || '0') || 0),
+        (sum, b) => sum + (parseFloat(b.billAmount?.toString() || '0') || 0),
         0
       );
     const yesterdayRevenue = hossBookings
       .filter(
-        (b: BookingDetail) =>
+        (b: ExtendedBookingDetail) =>
           isYesterday(new Date(b.checkIn)) && b.status !== 'Cancelled'
       )
       .reduce(
-        (sum, b) => sum + (parseFloat(b.totalBill?.toString() || '0') || 0),
+        (sum, b) => sum + (parseFloat(b.billAmount?.toString() || '0') || 0),
         0
       );
     const revenuePercentChange =
@@ -336,7 +318,6 @@ const Dashboard: React.FC = () => {
     };
   }, [hossBookings]);
 
-  // Calculate Occupancy Rate (New Logic)
   const calculateOccupancyRate = useCallback(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) {
       return { hoss: '0%', other: '0%' };
@@ -347,7 +328,7 @@ const Dashboard: React.FC = () => {
 
     const today = new Date();
 
-    const activeBookings = hossBookings.filter((booking: BookingDetail) => {
+    const activeBookings = hossBookings.filter((booking: ExtendedBookingDetail) => {
       if (booking.status === 'Cancelled') return false;
       const checkIn = new Date(booking.checkIn);
       const checkOut = new Date(booking.checkOut);
@@ -359,18 +340,18 @@ const Dashboard: React.FC = () => {
     let otherRooms = 0;
     let otherBeds = 0;
 
-    activeBookings.forEach((booking: BookingDetail) => {
-      const hotelNames = (booking.hotelName || 'HOSS')
+    activeBookings.forEach((booking: ExtendedBookingDetail) => {
+      const hotels = (booking.hotel || 'HOSS')
         .split('/')
         .map((name) => name.trim().toLowerCase());
 
-      const numHotels = hotelNames.length;
-      const isHossIncluded = hotelNames.some((name) => name === 'hoss');
+      const numHotels = hotels.length;
+      const isHossIncluded = hotels.some((name) => name === 'hoss');
 
-      const db = parseInt(booking.db?.toString() || '0', 10) || 0;
-      const tb = parseInt(booking.tb?.toString() || '0', 10) || 0;
-      const fb = parseInt(booking.fb?.toString() || '0', 10) || 0;
-      const extra = parseInt(booking.extra?.toString() || '0', 10) || 0;
+      const db = parseInt(booking.roomName?.doubleBed?.toString() || '0', 10) || 0;
+      const tb = parseInt(booking.roomName?.tripleBed?.toString() || '0', 10) || 0;
+      const fb = parseInt(booking.roomName?.fourBed?.toString() || '0', 10) || 0;
+      const extra = parseInt(booking.roomName?.extraBed?.toString() || '0', 10) || 0;
 
       const totalRooms = db + tb + fb;
 
@@ -405,7 +386,6 @@ const Dashboard: React.FC = () => {
     };
   }, [hossBookings]);
 
-  // Skeleton Loader Component
   const SkeletonLoader = ({
     count,
     type,
@@ -455,7 +435,6 @@ const Dashboard: React.FC = () => {
     );
   };
 
-  // Memoized Calendar Content
   const calendarContent = useMemo(
     () => (
       <DashboardCalendar
@@ -469,7 +448,6 @@ const Dashboard: React.FC = () => {
     [viewMode, searchQuery, hossBookings, isBookingsLoading]
   );
 
-  // Get trends and occupancy
   const trends = calculateTrends();
   const { hoss, other } = calculateOccupancyRate();
 
@@ -582,7 +560,7 @@ const Dashboard: React.FC = () => {
                 hossBookings?.filter(
                   (b) =>
                     isToday(new Date(b.checkIn)) && b.status !== 'Cancelled'
-                ).length || '0',
+                ).length || 0,
               icon: <FiCheckCircle size={24} />,
               trend: trends.checkInTrend,
               trendColor: trends.checkInTrend.includes('+')
@@ -599,7 +577,7 @@ const Dashboard: React.FC = () => {
                 hossBookings?.filter(
                   (b) =>
                     isToday(new Date(b.checkOut)) && b.status !== 'Cancelled'
-                ).length || '0',
+                ).length || 0,
               icon: <FiLogOut size={24} />,
               trend: trends.checkOutTrend,
               trendColor: trends.checkOutTrend.includes('+')
@@ -651,7 +629,7 @@ const Dashboard: React.FC = () => {
                   )
                   .reduce(
                     (sum, b) =>
-                      sum + (parseFloat(b.totalBill?.toString() || '0') || 0),
+                      sum + (parseFloat(b.billAmount?.toString() || '0') || 0),
                     0
                   ) || 0
               ).toLocaleString()}`,
@@ -676,7 +654,7 @@ const Dashboard: React.FC = () => {
               whileTap={{ scale: 0.95 }}
               onClick={stat.onClick}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 aktual-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
               <div className="flex items-center justify-between relative z-10">
                 <div>
                   <p className="text-sm text-[var(--text-secondary)] font-medium">
@@ -761,21 +739,40 @@ const Dashboard: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-[var(--text-primary)]">
-                          {booking.guestName}
+                          {booking.guestName || 'N/A'}
                         </h4>
                         <span
-                          className={`badge badge-${booking.status.toLowerCase().replace(' ', '-')}`}
+                          className={`badge badge-${(booking.status || '').toLowerCase().replace(' ', '-')}`}
                         >
-                          {booking.status}
+                          {booking.status || 'N/A'}
                         </span>
                       </div>
                       <p className="text-sm text-[var(--text-secondary)]">
-                        {booking.plan} • {booking.noOfRooms || 'N/A'} Rooms
+                        {booking.plan || 'N/A'} •{' '}
+                        {booking.roomName
+                          ? `${
+                              parseInt(booking.roomName.doubleBed || '0') +
+                              parseInt(booking.roomName.tripleBed || '0') +
+                              parseInt(booking.roomName.fourBed || '0')
+                            } Rooms`
+                          : 'N/A Rooms'}
                       </p>
                       <div className="flex items-center text-xs text-[var(--text-secondary)] mt-2">
                         <FiCalendar size={14} className="mr-2" />
                         <span>
-                          {booking.checkIn} - {booking.checkOut}
+                          {booking.checkIn || 'N/A'} - {booking.checkOut || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-[var(--text-secondary)] mt-2">
+                        <span className="font-medium">Advance:</span>{' '}
+                        <span className="text-emerald-400">
+                          ₹{booking.advance?.toLocaleString() || '0'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-[var(--text-secondary)] mt-1">
+                        <span className="font-medium">Bill Amount:</span>{' '}
+                        <span className="text-blue-400">
+                          ₹{booking.billAmount?.toLocaleString() || '0'}
                         </span>
                       </div>
                     </div>
@@ -801,7 +798,7 @@ const Dashboard: React.FC = () => {
                 ?.filter((b) => b.status !== 'Cancelled')
                 .reduce(
                   (sum, b) =>
-                    sum + (parseFloat(b.totalBill?.toString() || '0') || 0),
+                    sum + (parseFloat(b.billAmount?.toString() || '0') || 0),
                   0
                 ) || 0
             ).toLocaleString()}`,
@@ -829,7 +826,7 @@ const Dashboard: React.FC = () => {
         ].map((item, index) => (
           <motion.div
             key={index}
-            className="p-5 border border-[var(--border-color)] rounded plush-xl neumorphic-card"
+            className="p-5 border border-[var(--border-color)] rounded-xl neumorphic-card"
             whileHover={{ scale: 1.03 }}
           >
             <div className="flex items-center justify-between">
@@ -847,13 +844,13 @@ const Dashboard: React.FC = () => {
                 {item.icon}
               </div>
             </div>
-            <div className="mt-4 h-3 bg-[var(--card-bg)] rounded-full overflow-hidden">
+            <div className="mt-4 h-3 bg-[var(--background-color)] rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-primary rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: item.progress }}
                 transition={{ duration: 1, ease: 'easeOut' }}
-              ></motion.div>
+              />
             </div>
             <div className="mt-3 text-xs text-[var(--text-secondary)] flex justify-between">
               <span>Target: {item.target}</span>
@@ -912,51 +909,51 @@ const Dashboard: React.FC = () => {
                       transition={{ delay: index * 0.1 }}
                     >
                       <td data-label="Guest Name">
-                        <div className="font-medium">{enquiry.guestName}</div>
+                        <div className="font-medium">{enquiry.guestName || 'N/A'}</div>
                       </td>
                       <td data-label="Hotel">
-                        <div className="text-sm">{enquiry.hotel}</div>
+                        <div className="text-sm">{enquiry.hotel || 'N/A'}</div>
                       </td>
                       <td data-label="Check-In">
-                        <div className="text-sm">{enquiry.checkIn}</div>
+                        <div className="text-sm">{enquiry.checkIn || 'N/A'}</div>
                       </td>
                       <td data-label="Check-Out">
-                        <div className="text-sm">{enquiry.checkOut}</div>
+                        <div className="text-sm">{enquiry.checkOut || 'N/A'}</div>
                       </td>
                       <td data-label="Days">
-                        <div className="text-sm">{enquiry.day}</div>
+                        <div className="text-sm">{enquiry.day || '0'}</div>
                       </td>
                       <td data-label="PAX">
-                        <div className="text-sm">{enquiry.pax}</div>
+                        <div className="text-sm">{enquiry.pax || '0'}</div>
                       </td>
                       <td data-label="Double Bed">
                         <div className="text-sm">
-                          {enquiry.roomName.doubleBed}
+                          {enquiry.roomName?.doubleBed || '0'}
                         </div>
                       </td>
                       <td data-label="Triple Bed">
                         <div className="text-sm">
-                          {enquiry.roomName.tripleBed}
+                          {enquiry.roomName?.tripleBed || '0'}
                         </div>
                       </td>
                       <td data-label="Four Bed">
                         <div className="text-sm">
-                          {enquiry.roomName.fourBed}
+                          {enquiry.roomName?.fourBed || '0'}
                         </div>
                       </td>
                       <td data-label="Extra Bed">
                         <div className="text-sm">
-                          {enquiry.roomName.extraBed}
+                          {enquiry.roomName?.extraBed || '0'}
                         </div>
                       </td>
                       <td data-label="Kitchen">
                         <div className="text-sm">
-                          {enquiry.roomName.kitchen}
+                          {enquiry.roomName?.kitchen || '0'}
                         </div>
                       </td>
                       <td data-label="Bill Amount">
                         <div className="text-sm">
-                          ₹{enquiry.billAmount.toLocaleString()}
+                          ₹{enquiry.billAmount?.toLocaleString() || '0'}
                         </div>
                       </td>
                       <td data-label="Actions">
@@ -1046,7 +1043,7 @@ const Dashboard: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Custom Success Dialog */}
+      {/* Success Dialog */}
       <AnimatePresence>
         {isSuccessDialogOpen && isPageLoaded && (
           <motion.div
@@ -1063,7 +1060,7 @@ const Dashboard: React.FC = () => {
               exit={{ opacity: 0 }}
             />
             <motion.div
-              className="modal rounded-2xl z-50 w-full max-w-md bg-gradient-to-br from-green-500/80 to-green-600/80 neumorphic-card p-6 text-white backdrop-filter backdrop-blblur-md"
+              className="modal rounded-2xl z-50 w-full max-w-md bg-gradient-to-br from-green-500/80 to-green-600/80 neumorphic-card p-6 text-white backdrop-filter backdrop-blur-md"
               initial={{ scale: 0.8, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 50 }}
@@ -1085,9 +1082,7 @@ const Dashboard: React.FC = () => {
               <h3 className="text-xl font-semibold text-center">
                 Booking Created Successfully!
               </h3>
-              <p
-                className="text-sm text-center mt-2 opacity-90"
-              >
+              <p className="text-sm text-center mt-2 opacity-90">
                 Your booking has been added to the system.
               </p>
               <div className="mt-6 flex justify-center">
@@ -1157,7 +1152,7 @@ const Dashboard: React.FC = () => {
                     >
                       <div className="flex items-start">
                         <div
-                          className={`w-12 h-12 rounded-full bg-[var(--icon-bg-indigo)] flex items-center justify-center mr-4 mt-1 shadow-inner`}
+                          className={`w-12135 h-12 rounded-full bg-[var(--icon-bg-indigo)] flex items-center justify-center mr-4 mt-1 shadow-inner`}
                         >
                           <FiUser
                             size={20}
@@ -1167,21 +1162,28 @@ const Dashboard: React.FC = () => {
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <h4 className="font-medium text-[var(--text-primary)]">
-                              {booking.guestName}
+                              {booking.guestName || 'N/A'}
                             </h4>
                             <span
-                              className={`badge badge-${booking.status.toLowerCase().replace(' ', '-')}`}
+                              className={`badge badge-${(booking.status || '').toLowerCase().replace(' ', '-')}`}
                             >
-                              {booking.status}
+                              {booking.status || 'N/A'}
                             </span>
                           </div>
                           <p className="text-sm text-[var(--text-secondary)]">
-                            {booking.plan} • {booking.noOfRooms || 'N/A'} Rooms
+                            {booking.plan || 'N/A'} •{' '}
+                            {booking.roomName
+                              ? `${
+                                  parseInt(booking.roomName.doubleBed || '0') +
+                                  parseInt(booking.roomName.tripleBed || '0') +
+                                  parseInt(booking.roomName.fourBed || '0')
+                                } Rooms`
+                              : 'N/A Rooms'}
                           </p>
                           <div className="flex items-center text-xs text-[var(--text-secondary)] mt-2">
                             <FiCalendar size={14} className="mr-2" />
                             <span>
-                              {booking.checkIn} - {booking.checkOut}
+                              {booking.checkIn || 'N/A'} - {booking.checkOut || 'N/A'}
                             </span>
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] mt-2">
@@ -1191,9 +1193,9 @@ const Dashboard: React.FC = () => {
                             </span>
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] mt-1">
-                            <span className="font-medium">Total Bill:</span>{' '}
+                            <span className="font-medium">Bill Amount:</span>{' '}
                             <span className="text-blue-400">
-                              ₹{booking.totalBill?.toLocaleString() || '0'}
+                              ₹{booking.billAmount?.toLocaleString() || '0'}
                             </span>
                           </div>
                         </div>
@@ -1274,46 +1276,54 @@ const Dashboard: React.FC = () => {
               <div className="space-y-3 text-sm text-[var(--text-primary)]">
                 <p>
                   <span className="font-medium">Guest:</span>{' '}
-                  {selectedBooking.guestName}
+                  {selectedBooking.guestName || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Hotel:</span>{' '}
-                  {selectedBooking.hotelName}
+                  {selectedBooking.hotel || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Plan:</span>{' '}
-                  {selectedBooking.plan}
+                  {selectedBooking.plan || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Check-In:</span>{' '}
-                  {selectedBooking.checkIn}
+                  {selectedBooking.checkIn || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Check-Out:</span>{' '}
-                  {selectedBooking.checkOut}
+                  {selectedBooking.checkOut || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">PAX:</span>{' '}
                   {selectedBooking.pax || 'N/A'}
                 </p>
                 <p>
-                  <span className="font-medium">Rooms:</span>{' '}
-                  {selectedBooking.noOfRooms || 'N/A'}
+                  <span className="font-medium">Double Bed:</span>{' '}
+                  {selectedBooking.roomName?.doubleBed || '0'}
+                </p>
+                <p>
+                  <span className="font-medium">Triple Bed:</span>{' '}
+                  {selectedBooking.roomName?.tripleBed || '0'}
+                </p>
+                <p>
+                  <span className="font-medium">Four Bed:</span>{' '}
+                  {selectedBooking.roomName?.fourBed || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Extra Bed:</span>{' '}
-                  {selectedBooking.extraBed || 'N/A'}
+                  {selectedBooking.roomName?.extraBed || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Kitchen:</span>{' '}
-                  {selectedBooking.kitchen || 'N/A'}
+                  {selectedBooking.roomName?.kitchen || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Status:</span>{' '}
                   <span
-                    className={`badge badge-${selectedBooking.status.toLowerCase().replace(' ', '-')}`}
+                    className={`badge badge-${(selectedBooking.status || '').toLowerCase().replace(' ', '-')}`}
                   >
-                    {selectedBooking.status}
+                    {selectedBooking.status || 'N/A'}
                   </span>
                 </p>
                 <p>
@@ -1323,9 +1333,9 @@ const Dashboard: React.FC = () => {
                   </span>
                 </p>
                 <p>
-                  <span className="font-medium">Total Bill:</span>{' '}
+                  <span className="font-medium">Bill Amount:</span>{' '}
                   <span className="text-blue-400">
-                    ₹{selectedBooking.totalBill?.toLocaleString() || '0'}
+                    ₹{selectedBooking.billAmount?.toLocaleString() || '0'}
                   </span>
                 </p>
               </div>
@@ -1377,7 +1387,7 @@ const Dashboard: React.FC = () => {
               transition={{ duration: 0.4, ease: 'easeOut' }}
               style={{
                 boxShadow:
-                  '0 8px 32px rgba(0, 0, 128, 0.4), inset 2px 2px 4px rgba(255, 255, 255, 0.2)',
+                  '0 8px 20px rgba(0, 0, 128, 0.4), inset 2px 2px 4px rgba(255, 255, 255, 0.2)',
               }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -1395,60 +1405,60 @@ const Dashboard: React.FC = () => {
               <div className="space-y-3 text-sm text-[var(--text-primary)]">
                 <p>
                   <span className="font-medium">Guest:</span>{' '}
-                  {selectedEnquiry.guestName}
+                  {selectedEnquiry.guestName || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Hotel:</span>{' '}
-                  {selectedEnquiry.hotel}
+                  {selectedEnquiry.hotel || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Check-In:</span>{' '}
-                  {selectedEnquiry.checkIn}
+                  {selectedEnquiry.checkIn || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Check-Out:</span>{' '}
-                  {selectedEnquiry.checkOut}
+                  {selectedEnquiry.checkOut || 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Days:</span>{' '}
-                  {selectedEnquiry.day}
+                  {selectedEnquiry.day || '0'}
                 </p>
                 <p>
                   <span className="font-medium">PAX:</span>{' '}
-                  {selectedEnquiry.pax}
+                  {selectedEnquiry.pax || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Double Bed:</span>{' '}
-                  {selectedEnquiry.roomName.doubleBed}
+                  {selectedEnquiry.roomName?.doubleBed || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Triple Bed:</span>{' '}
-                  {selectedEnquiry.roomName.tripleBed}
+                  {selectedEnquiry.roomName?.tripleBed || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Four Bed:</span>{' '}
-                  {selectedEnquiry.roomName.fourBed}
+                  {selectedEnquiry.roomName?.fourBed || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Extra Bed:</span>{' '}
-                  {selectedEnquiry.roomName.extraBed}
+                  {selectedEnquiry.roomName?.extraBed || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Kitchen:</span>{' '}
-                  {selectedEnquiry.roomName.kitchen}
+                  {selectedEnquiry.roomName?.kitchen || '0'}
                 </p>
                 <p>
                   <span className="font-medium">Bill Amount:</span>{' '}
                   <span className="text-blue-400">
-                    ₹{selectedEnquiry.billAmount.toLocaleString()}
+                    ₹{selectedEnquiry.billAmount?.toLocaleString() || '0'}
                   </span>
                 </p>
                 <p>
                   <span className="font-medium">Status:</span>{' '}
                   <span
-                    className={`badge badge-${selectedEnquiry.status.toLowerCase().replace(' ', '-')}`}
+                    className={`badge badge-${(selectedEnquiry.status || '').toLowerCase().replace(' ', '-')}`}
                   >
-                    {selectedEnquiry.status}
+                    {selectedEnquiry.status || 'N/A'}
                   </span>
                 </p>
               </div>
@@ -1476,6 +1486,6 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
     </motion.div>
   );
-};
+});
 
 export default Dashboard;

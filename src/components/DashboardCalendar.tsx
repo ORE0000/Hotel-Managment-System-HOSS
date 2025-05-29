@@ -36,7 +36,7 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ viewMode, searchQ
       const matchesSearch = searchQuery
         ? booking.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           booking.plan.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          booking.hotelName.toLowerCase().includes(searchQuery.toLowerCase())
+          booking.hotel.toLowerCase().includes(searchQuery.toLowerCase())
         : true;
       const matchesStatus = filters.status ? booking.status === filters.status : true;
       const matchesDate =
@@ -103,7 +103,7 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ viewMode, searchQ
         <p><strong>Status:</strong> {booking.status}</p>
         <p><strong>Check-in:</strong> {format(new Date(booking.checkIn), 'PPP')}</p>
         <p><strong>Check-out:</strong> {format(new Date(booking.checkOut), 'PPP')}</p>
-        <p><strong>Hotel:</strong> {booking.hotelName || 'N/A'}</p>
+        <p><strong>Hotel:</strong> {booking.hotel || 'N/A'}</p>
       </div>,
       { autoClose: 5000, className: 'glass-card neumorphic-card' }
     );

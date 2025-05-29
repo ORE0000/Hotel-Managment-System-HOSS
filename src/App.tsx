@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./components/Dashboard";
 import Booking from "./pages/Booking";
@@ -10,10 +11,13 @@ import FilterDetailsPage from "./pages/FilterDetailsPage";
 import EnquiryPage from "./pages/EnquiryPage";
 import BookingDetails from "./components/BookingDetails";
 import FinancialSummary from "./components/FinancialSummary";
+import RoomList from "./components/RoomList";
 import RatesPage from "./pages/RatesPage";
 import HOSSBookingsPage from "./pages/HOSSBookingsPage";
 import BookingAdvancePage from "./components/BookingAdvance";
 import OtherHotelsPage from "./components/OtherHotels";
+import LoginForm from "./components/LoginForm";
+import BillingPage from "./pages/BillingPage";
 
 const ErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
   <div className="p-6 text-[var(--destructive)] bg-[var(--destructive-foreground)] rounded-lg max-w-7xl mx-auto">
@@ -28,41 +32,59 @@ const ErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
   </div>
 );
 
+const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
 const App: React.FC = () => {
   return (
-    <Router
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        {/* AppLayout wraps all routes to provide consistent sidebar and layout */}
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/booking" element={<Booking />} />
-            <Route path="/calendar" element={<CalendarView />} />
-            <Route path="/details" element={<BookingDetails />} />
-            <Route path="/filter" element={<FilterDetailsPage />} />
-            <Route path="/enquiry" element={<EnquiryPage />} />
-            <Route path="/hoss-bookings" element={<HOSSBookingsPage />} />
-            <Route path="/booking-advance" element={<BookingAdvancePage />} />
-            <Route path="/other-hotels" element={<OtherHotelsPage />} />
-            <Route path="/financial" element={<FinancialSummary />} />
-            <Route path="/rates" element={<RatesPage />} />
-          </Route>
-        </Routes>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          closeOnClick
-          pauseOnHover
-          theme="colored"
-        />
-      </ErrorBoundary>
-    </Router>
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
+          <Routes>
+            <Route path="/login" element={<LoginForm />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/booking" element={<Booking />} />
+              <Route path="/calendar" element={<CalendarView />} />
+              <Route path="/details" element={<BookingDetails />} />
+              <Route path="/filter" element={<FilterDetailsPage />} />
+              <Route path="/enquiry" element={<EnquiryPage />} />
+              <Route path="/hoss-bookings" element={<HOSSBookingsPage />} />
+              <Route path="/booking-advance" element={<BookingAdvancePage />} />
+              <Route path="/other-hotels" element={<OtherHotelsPage />} />
+              <Route path="/financial" element={<FinancialSummary />} />
+              <Route path="/room-list" element={<RoomList />} />
+              <Route path="/rates" element={<RatesPage />} />
+              <Route path="/billing" element={<BillingPage />} />
+              <Route path="/profile" element={<div>Profile Page (To be implemented)</div>} />
+              <Route path="/settings" element={<div>Settings Page (To be implemented)</div>} />
+              <Route path="/about" element={<div>About Page (To be implemented)</div>} />
+            </Route>
+          </Routes>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            closeOnClick
+            pauseOnHover
+            theme="colored"
+          />
+        </ErrorBoundary>
+      </Router>
+    </GoogleOAuthProvider>
   );
 };
 
