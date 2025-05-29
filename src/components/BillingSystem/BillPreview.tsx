@@ -65,9 +65,9 @@ const BillPreview: React.FC<BillPreviewProps> = ({ billData, index }) => {
           <div>
             <h3 className="text-xl font-semibold">
               {billData.formType === 'restaurant' ? 'Restaurant Information' :
-               billData.formType === 'hotel' ? 'Guest Information' :
-               billData.formType === 'travel' ? 'Agent Information' :
-               'Guest Information'}
+              billData.formType === 'hotel' ? 'Guest Information' :
+              billData.formType === 'travel' ? 'Agent Information' :
+              'Guest Information'}
             </h3>
             <table className="w-full mt-2">
               <tbody>
@@ -154,49 +154,49 @@ const BillPreview: React.FC<BillPreviewProps> = ({ billData, index }) => {
                 </tr>
               </thead>
               <tbody>
-                {billData.doubleBedCount > 0 && (
+                {billData.doubleBedRoom > 0 && (
                   <tr className="border-b border-gray-100">
                     <td className="py-2 px-3">Double Bed Room</td>
-                    <td className="py-2 px-3">{billData.doubleBedCount}</td>
+                    <td className="py-2 px-3">{billData.doubleBedRoom}</td>
                     <td className="py-2 px-3">{formatCurrency(billData.doubleBedRate)}</td>
                     <td className="py-2 px-3">{billData.days}</td>
-                    <td className="py-2 px-3">{formatCurrency(billData.doubleBedCount * billData.doubleBedRate * billData.days)}</td>
+                    <td className="py-2 px-3">{formatCurrency(billData.doubleBedRoom * billData.doubleBedRate * billData.days)}</td>
                   </tr>
                 )}
-                {billData.tripleBedCount > 0 && (
+                {billData.tripleBedRoom > 0 && (
                   <tr className="border-b border-gray-100">
                     <td className="py-2 px-3">Triple Bed Room</td>
-                    <td className="py-2 px-3">{billData.tripleBedCount}</td>
+                    <td className="py-2 px-3">{billData.tripleBedRoom}</td>
                     <td className="py-2 px-3">{formatCurrency(billData.tripleBedRate)}</td>
                     <td className="py-2 px-3">{billData.days}</td>
-                    <td className="py-2 px-3">{formatCurrency(billData.tripleBedCount * billData.tripleBedRate * billData.days)}</td>
+                    <td className="py-2 px-3">{formatCurrency(billData.tripleBedRoom * billData.tripleBedRate * billData.days)}</td>
                   </tr>
                 )}
-                {billData.fourBedCount > 0 && (
+                {billData.fourBedRoom > 0 && (
                   <tr className="border-b border-gray-100">
                     <td className="py-2 px-3">Four Bed Room</td>
-                    <td className="py-2 px-3">{billData.fourBedCount}</td>
+                    <td className="py-2 px-3">{billData.fourBedRoom}</td>
                     <td className="py-2 px-3">{formatCurrency(billData.fourBedRate)}</td>
                     <td className="py-2 px-3">{billData.days}</td>
-                    <td className="py-2 px-3">{formatCurrency(billData.fourBedCount * billData.fourBedRate * billData.days)}</td>
+                    <td className="py-2 px-3">{formatCurrency(billData.fourBedRoom * billData.fourBedRate * billData.days)}</td>
                   </tr>
                 )}
-                {billData.extraBedCount > 0 && (
+                {billData.extraBedRoom > 0 && (
                   <tr className="border-b border-gray-100">
                     <td className="py-2 px-3">Extra Bed</td>
-                    <td className="py-2 px-3">{billData.extraBedCount}</td>
+                    <td className="py-2 px-3">{billData.extraBedRoom}</td>
                     <td className="py-2 px-3">{formatCurrency(billData.extraBedRate)}</td>
                     <td className="py-2 px-3">{billData.days}</td>
-                    <td className="py-2 px-3">{formatCurrency(billData.extraBedCount * billData.extraBedRate * billData.days)}</td>
+                    <td className="py-2 px-3">{formatCurrency(billData.extraBedRoom * billData.extraBedRate * billData.days)}</td>
                   </tr>
                 )}
-                {billData.kitchenCount > 0 && (
+                {billData.kitchenRoom > 0 && (
                   <tr className="border-b border-gray-100">
                     <td className="py-2 px-3">Kitchen</td>
-                    <td className="py-2 px-3">{billData.kitchenCount}</td>
+                    <td className="py-2 px-3">{billData.kitchenRoom}</td>
                     <td className="py-2 px-3">{formatCurrency(billData.kitchenRate)}</td>
                     <td className="py-2 px-3">{billData.days}</td>
-                    <td className="py-2 px-3">{formatCurrency(billData.kitchenCount * billData.kitchenRate * billData.days)}</td>
+                    <td className="py-2 px-3">{formatCurrency(billData.kitchenRoom * billData.kitchenRate * billData.days)}</td>
                   </tr>
                 )}
                 <tr className="bg-blue-50 font-medium">

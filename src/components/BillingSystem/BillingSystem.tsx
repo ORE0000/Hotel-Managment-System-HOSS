@@ -21,11 +21,11 @@ const initialBillData: BillData = {
   checkOut: '',
   days: 1,
   pax: 1,
-  doubleBedCount: 0,
-  tripleBedCount: 0,
-  fourBedCount: 0,
-  extraBedCount: 0,
-  kitchenCount: 0,
+  doubleBedRoom: 0,
+  tripleBedRoom: 0,
+  fourBedRoom: 0,
+  extraBedRoom: 0,
+  kitchenRoom: 0,
   roomNumber: '',
   doubleBedRate: 2000,
   tripleBedRate: 2400,
@@ -59,8 +59,8 @@ const BillingSystem: React.FC = () => {
     const currentBill = { ...updateBills[currentBillIndex], formType: activeFormType };
     
     const numericFields: (keyof BillData)[] = [
-      'days', 'pax', 'doubleBedCount', 'tripleBedCount', 'fourBedCount',
-      'extraBedCount', 'kitchenCount', 'doubleBedRate', 'tripleBedRate',
+      'days', 'pax', 'doubleBedRoom', 'tripleBedRoom', 'fourBedRoom',
+      'extraBedRoom', 'kitchenRoom', 'doubleBedRate', 'tripleBedRate',
       'fourBedRate', 'extraBedRate', 'kitchenRate', 'advance', 'cashIn',
       'cashOut', 'ratePerGuest'
     ];
