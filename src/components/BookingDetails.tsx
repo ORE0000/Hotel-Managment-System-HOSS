@@ -90,7 +90,7 @@ const BookingDetails: React.FC = () => {
 👤 *Guest:* ${booking.guestName}\n
 📅 *Check-in:* ${booking.checkIn}\n
 📅 *Check-out:* ${booking.checkOut}\n
-🏨 *Hotel:* ${booking.hotelName}\n
+🏨 *Hotel:* ${booking.hotel}\n
 🧑‍🤝‍🧑 *PAX:* ${booking.pax ?? "N/A"}\n
 🏠 *Rooms:* ${booking.noOfRooms ?? "N/A"}\n
 🛏️ *Extra Bed:* ${booking.extraBed ?? "N/A"}\n
@@ -212,7 +212,7 @@ const BookingDetails: React.FC = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Hotel:</span>
-                  <span className="font-medium">{item.hotelName}</span>
+                  <span className="font-medium">{item.hotel}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-secondary)]">Dates:</span>
