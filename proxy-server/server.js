@@ -19,7 +19,7 @@ if (!GOOGLE_SCRIPT_URL) {
 // Middleware
 app.use(
   cors({
-    origin: "https://booking.hotelomshivshankar.com", // ✅ 
+    origin: "https://booking.hotelomshivshankar.com", // ✅ Added for frontend
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
