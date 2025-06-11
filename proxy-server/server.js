@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Load from environment variable
+// Load from environment variable  and also Updated 
 const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
 
 if (!GOOGLE_SCRIPT_URL) {
