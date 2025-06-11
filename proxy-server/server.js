@@ -19,7 +19,7 @@ if (!GOOGLE_SCRIPT_URL) {
 // Middleware
 app.use(
   cors({
-    origin: "*", // Update in production
+    origin: "https://booking.hotelomshivshankar.com", // ✅ Your real frontend
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
