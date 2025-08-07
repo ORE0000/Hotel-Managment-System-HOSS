@@ -9,7 +9,7 @@ const FinancialSummary: React.FC = () => {
   });
 
   return (
-    <div className="p-4 md:p-6 fade-in max-w-7xl mx-auto">
+    <div className="p-6 w-full fade-in">
       <h2 className="text-2xl md:text-3xl font-bold text-gradient mb-6 sticky top-0 bg-[var(--bg-primary)] z-10 py-4">Financial Summary</h2>
       {error && (
         <div className="p-4 bg-red-100 text-red-600 rounded-lg mb-4">

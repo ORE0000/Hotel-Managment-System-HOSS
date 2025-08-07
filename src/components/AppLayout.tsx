@@ -58,9 +58,10 @@ const AppLayout: React.FC = () => {
           className={`flex-1 transition-all duration-300 main-content ${isDesktop ? 'ml-[var(--sidebar-desktop-width)]' : isSidebarOpen ? 'ml-[280px]' : 'ml-0'}`}
           style={{ maxWidth: isDesktop ? 'calc(100% - var(--sidebar-desktop-width))' : '100%' }}
         >
-          <main className="p-4 md:p-6 max-w-7xl mx-auto">
-            <Outlet />
-          </main>
+          <main className="w-full px-4 md:px-6">
+  <Outlet />
+</main>
+
         </div>
       </div>
     </div>

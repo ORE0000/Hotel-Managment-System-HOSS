@@ -446,7 +446,7 @@ Due Amount: ₹${calculated.due}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-4 md:p-8 max-w-5xl mx-auto"
+      className="space-y-8 p-6 w-full"
     >
       {/* Clear Confirmation Dialog */}
       <AnimatePresence>

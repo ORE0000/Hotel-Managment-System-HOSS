@@ -9,7 +9,7 @@ import {
   ExtendedBookingDetail
 } from "../types";
 
-const WEB_APP_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const WEB_APP_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {

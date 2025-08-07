@@ -18,9 +18,12 @@ import BookingAdvancePage from "./components/BookingAdvance";
 import OtherHotelsPage from "./components/OtherHotels";
 import LoginForm from "./components/LoginForm";
 import BillingPage from "./pages/BillingPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+import AdminPanel from "./pages/AdminPanel";
 
 const ErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
-  <div className="p-6 text-[var(--destructive)] bg-[var(--destructive-foreground)] rounded-lg max-w-7xl mx-auto">
+  <div className="p-6 text-[var(--icon-bg-red)] bg-[var(--card-bg)] rounded-lg max-w-7xl mx-auto">
     <h2 className="text-2xl font-bold">Something went wrong!</h2>
     <p>{error.message}</p>
     <button
@@ -32,9 +35,18 @@ const ErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
   </div>
 );
 
-const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: JSX.Element; adminOnly?: boolean }> = ({ children, adminOnly = false }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const user = localStorage.getItem('user');
+  const isAdmin = user ? JSON.parse(user).role === 'admin' : false;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/" />;
+  }
+  return children;
 };
 
 const App: React.FC = () => {
@@ -69,9 +81,16 @@ const App: React.FC = () => {
               <Route path="/room-list" element={<RoomList />} />
               <Route path="/rates" element={<RatesPage />} />
               <Route path="/billing" element={<BillingPage />} />
-              <Route path="/profile" element={<div>Profile Page (To be implemented)</div>} />
-              <Route path="/settings" element={<div>Settings Page (To be implemented)</div>} />
-              <Route path="/about" element={<div>About Page (To be implemented)</div>} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
           </Routes>
           <ToastContainer

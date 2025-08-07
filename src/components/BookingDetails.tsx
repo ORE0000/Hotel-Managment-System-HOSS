@@ -102,7 +102,7 @@ const BookingDetails: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 fade-in max-w-7xl mx-auto">
+    <div className="p-6 w-full fade-in">
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 sticky top-0 bg-[var(--bg-primary)] z-10 py-4">
         <h2 className="text-2xl md:text-3xl font-bold text-gradient flex items-center gap-2">
           <FiCalendar className="text-indigo-500" />

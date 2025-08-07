@@ -939,7 +939,7 @@ const HOSSBookings: React.FC = () => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
-    <div className="p-2 sm:p-4 md:p-6 max-w-[1600px] mx-auto">
+    <div className="space-y-8 p-6 w-full">
       <div
         className="pdf-preview-container"
         style={{ display: 'none', position: 'fixed', top: 0, left: 0 }}

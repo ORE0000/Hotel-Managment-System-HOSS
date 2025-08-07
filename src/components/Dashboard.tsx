@@ -44,9 +44,12 @@ const Dashboard: React.FC = React.memo(() => {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isAllBookingsModalOpen, setIsAllBookingsModalOpen] = useState(false);
-  const [isBookingDetailModalOpen, setIsBookingDetailModalOpen] = useState(false);
-  const [isEnquiryDetailModalOpen, setIsEnquiryDetailModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<ExtendedBookingDetail | null>(null);
+  const [isBookingDetailModalOpen, setIsBookingDetailModalOpen] =
+    useState(false);
+  const [isEnquiryDetailModalOpen, setIsEnquiryDetailModalOpen] =
+    useState(false);
+  const [selectedBooking, setSelectedBooking] =
+    useState<ExtendedBookingDetail | null>(null);
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [showOtherHotels, setShowOtherHotels] = useState(false);
 
@@ -128,13 +131,31 @@ const Dashboard: React.FC = React.memo(() => {
 
   const copyBookingDetails = () => {
     if (!selectedBooking) return;
-    const rooms = [
-      selectedBooking.roomName?.doubleBed && selectedBooking.roomName.doubleBed !== '0' ? `Double Bed: ${selectedBooking.roomName.doubleBed}` : '',
-      selectedBooking.roomName?.tripleBed && selectedBooking.roomName.tripleBed !== '0' ? `Triple Bed: ${selectedBooking.roomName.tripleBed}` : '',
-      selectedBooking.roomName?.fourBed && selectedBooking.roomName.fourBed !== '0' ? `Four Bed: ${selectedBooking.roomName.fourBed}` : '',
-      selectedBooking.roomName?.extraBed && selectedBooking.roomName.extraBed !== '0' ? `Extra Bed: ${selectedBooking.roomName.extraBed}` : '',
-      selectedBooking.roomName?.kitchen && selectedBooking.roomName.kitchen !== '0' ? `Kitchen: ${selectedBooking.roomName.kitchen}` : '',
-    ].filter(Boolean).join('\n') || 'N/A';
+    const rooms =
+      [
+        selectedBooking.roomName?.doubleBed &&
+        selectedBooking.roomName.doubleBed !== '0'
+          ? `Double Bed: ${selectedBooking.roomName.doubleBed}`
+          : '',
+        selectedBooking.roomName?.tripleBed &&
+        selectedBooking.roomName.tripleBed !== '0'
+          ? `Triple Bed: ${selectedBooking.roomName.tripleBed}`
+          : '',
+        selectedBooking.roomName?.fourBed &&
+        selectedBooking.roomName.fourBed !== '0'
+          ? `Four Bed: ${selectedBooking.roomName.fourBed}`
+          : '',
+        selectedBooking.roomName?.extraBed &&
+        selectedBooking.roomName.extraBed !== '0'
+          ? `Extra Bed: ${selectedBooking.roomName.extraBed}`
+          : '',
+        selectedBooking.roomName?.kitchen &&
+        selectedBooking.roomName.kitchen !== '0'
+          ? `Kitchen: ${selectedBooking.roomName.kitchen}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n') || 'N/A';
     const text = `Guest: ${selectedBooking.guestName || 'N/A'}\nPlan: ${selectedBooking.plan || 'N/A'}\nCheck-In: ${selectedBooking.checkIn || 'N/A'}\nCheck-Out: ${selectedBooking.checkOut || 'N/A'}\nHotel: ${selectedBooking.hotel || 'N/A'}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms:\n${rooms}\nStatus: ${selectedBooking.status || 'N/A'}\nAdvance: ₹${selectedBooking.advance?.toLocaleString() || '0'}\nBill Amount: ₹${selectedBooking.billAmount?.toLocaleString() || '0'}`;
     navigator.clipboard.writeText(text);
     toast.success('Booking details copied to clipboard');
@@ -160,7 +181,9 @@ const Dashboard: React.FC = React.memo(() => {
   const recentBookings = useCallback(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) return [];
     return hossBookings
-      .filter((booking: ExtendedBookingDetail) => isToday(new Date(booking.checkIn)))
+      .filter((booking: ExtendedBookingDetail) =>
+        isToday(new Date(booking.checkIn))
+      )
       .sort(
         (a: ExtendedBookingDetail, b: ExtendedBookingDetail) =>
           new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
@@ -171,7 +194,9 @@ const Dashboard: React.FC = React.memo(() => {
   const allTodayBookings = useMemo(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) return [];
     return hossBookings
-      .filter((booking: ExtendedBookingDetail) => isToday(new Date(booking.checkIn)))
+      .filter((booking: ExtendedBookingDetail) =>
+        isToday(new Date(booking.checkIn))
+      )
       .sort(
         (a: ExtendedBookingDetail, b: ExtendedBookingDetail) =>
           new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
@@ -232,22 +257,26 @@ const Dashboard: React.FC = React.memo(() => {
       const days = differenceInDays(end, start) + 1;
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const dailyBookings = hossBookings.filter((booking: ExtendedBookingDetail) => {
-          if (booking.status === 'Cancelled') return false;
-          const checkIn = new Date(booking.checkIn);
-          const checkOut = new Date(booking.checkOut);
-          return checkIn <= d && d <= checkOut;
-        });
+        const dailyBookings = hossBookings.filter(
+          (booking: ExtendedBookingDetail) => {
+            if (booking.status === 'Cancelled') return false;
+            const checkIn = new Date(booking.checkIn);
+            const checkOut = new Date(booking.checkOut);
+            return checkIn <= d && d <= checkOut;
+          }
+        );
 
         let dailyOccupiedRooms = 0;
         dailyBookings.forEach((booking: ExtendedBookingDetail) => {
-          const hotels = booking.hotel
-            ?.split('/')
-            ?.map((h) => h.trim()) || ['HOSS'];
+          const hotels = booking.hotel?.split('/')?.map((h) => h.trim()) || [
+            'HOSS',
+          ];
           if (hotels.includes('HOSS')) {
             const rooms =
-              (parseInt(booking.roomName?.doubleBed?.toString() || '0', 10) || 0) +
-              (parseInt(booking.roomName?.tripleBed?.toString() || '0', 10) || 0) +
+              (parseInt(booking.roomName?.doubleBed?.toString() || '0', 10) ||
+                0) +
+              (parseInt(booking.roomName?.tripleBed?.toString() || '0', 10) ||
+                0) +
               (parseInt(booking.roomName?.fourBed?.toString() || '0', 10) || 0);
             dailyOccupiedRooms +=
               hotels.length === 1 ? rooms : rooms / hotels.length;
@@ -328,12 +357,14 @@ const Dashboard: React.FC = React.memo(() => {
 
     const today = new Date();
 
-    const activeBookings = hossBookings.filter((booking: ExtendedBookingDetail) => {
-      if (booking.status === 'Cancelled') return false;
-      const checkIn = new Date(booking.checkIn);
-      const checkOut = new Date(booking.checkOut);
-      return checkIn <= today && today <= checkOut;
-    });
+    const activeBookings = hossBookings.filter(
+      (booking: ExtendedBookingDetail) => {
+        if (booking.status === 'Cancelled') return false;
+        const checkIn = new Date(booking.checkIn);
+        const checkOut = new Date(booking.checkOut);
+        return checkIn <= today && today <= checkOut;
+      }
+    );
 
     let hossRooms = 0;
     let hossBeds = 0;
@@ -348,10 +379,14 @@ const Dashboard: React.FC = React.memo(() => {
       const numHotels = hotels.length;
       const isHossIncluded = hotels.some((name) => name === 'hoss');
 
-      const db = parseInt(booking.roomName?.doubleBed?.toString() || '0', 10) || 0;
-      const tb = parseInt(booking.roomName?.tripleBed?.toString() || '0', 10) || 0;
-      const fb = parseInt(booking.roomName?.fourBed?.toString() || '0', 10) || 0;
-      const extra = parseInt(booking.roomName?.extraBed?.toString() || '0', 10) || 0;
+      const db =
+        parseInt(booking.roomName?.doubleBed?.toString() || '0', 10) || 0;
+      const tb =
+        parseInt(booking.roomName?.tripleBed?.toString() || '0', 10) || 0;
+      const fb =
+        parseInt(booking.roomName?.fourBed?.toString() || '0', 10) || 0;
+      const extra =
+        parseInt(booking.roomName?.extraBed?.toString() || '0', 10) || 0;
 
       const totalRooms = db + tb + fb;
 
@@ -456,7 +491,7 @@ const Dashboard: React.FC = React.memo(() => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-8 p-6 max-w-7xl mx-auto"
+      className="space-y-8 p-6 w-full"
     >
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -760,7 +795,8 @@ const Dashboard: React.FC = React.memo(() => {
                       <div className="flex items-center text-xs text-[var(--text-secondary)] mt-2">
                         <FiCalendar size={14} className="mr-2" />
                         <span>
-                          {booking.checkIn || 'N/A'} - {booking.checkOut || 'N/A'}
+                          {booking.checkIn || 'N/A'} -{' '}
+                          {booking.checkOut || 'N/A'}
                         </span>
                       </div>
                       <div className="text-xs text-[var(--text-secondary)] mt-2">
@@ -909,16 +945,22 @@ const Dashboard: React.FC = React.memo(() => {
                       transition={{ delay: index * 0.1 }}
                     >
                       <td data-label="Guest Name">
-                        <div className="font-medium">{enquiry.guestName || 'N/A'}</div>
+                        <div className="font-medium">
+                          {enquiry.guestName || 'N/A'}
+                        </div>
                       </td>
                       <td data-label="Hotel">
                         <div className="text-sm">{enquiry.hotel || 'N/A'}</div>
                       </td>
                       <td data-label="Check-In">
-                        <div className="text-sm">{enquiry.checkIn || 'N/A'}</div>
+                        <div className="text-sm">
+                          {enquiry.checkIn || 'N/A'}
+                        </div>
                       </td>
                       <td data-label="Check-Out">
-                        <div className="text-sm">{enquiry.checkOut || 'N/A'}</div>
+                        <div className="text-sm">
+                          {enquiry.checkOut || 'N/A'}
+                        </div>
                       </td>
                       <td data-label="Days">
                         <div className="text-sm">{enquiry.day || '0'}</div>
@@ -1183,7 +1225,8 @@ const Dashboard: React.FC = React.memo(() => {
                           <div className="flex items-center text-xs text-[var(--text-secondary)] mt-2">
                             <FiCalendar size={14} className="mr-2" />
                             <span>
-                              {booking.checkIn || 'N/A'} - {booking.checkOut || 'N/A'}
+                              {booking.checkIn || 'N/A'} -{' '}
+                              {booking.checkOut || 'N/A'}
                             </span>
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] mt-2">

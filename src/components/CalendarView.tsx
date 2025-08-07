@@ -975,7 +975,7 @@ const CalendarView = () => {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 fade-in max-w-[100vw] sm:max-w-7xl mx-auto">
+    <div className="p-6 w-full fade-in">
       <h2 className="text-2xl sm:text-3xl font-bold text-gradient mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
         <FiCalendar className="text-[var(--icon-bg-indigo)]" size={24} />
         Booking Calendar

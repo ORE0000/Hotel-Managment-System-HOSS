@@ -593,8 +593,10 @@ body {
 @media (min-width: 768px) {
   .main-content {
     margin-left: var(--sidebar-desktop-width);
+    width: calc(100% - var(--sidebar-desktop-width));
   }
 }
+
 
 /* Profile Section */
 .profile-section {
