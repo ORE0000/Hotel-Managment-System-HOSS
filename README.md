@@ -1,7 +1,8 @@
-Here's a professional, modern `README.md` for your GitHub repository:
-
-```markdown
 # 🏨 HOSS - Hotel Om Shiv Shankar Management System
+
+<p align="center">
+  <img src="https://drive.google.com/uc?export=view&id=1FNpSJFrJjhUPuXNTWVQTmEagYWVyCHmy" alt="HOSS Banner" width="100%" />
+</p>
 
 ![React](https://img.shields.io/badge/React-18.2-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
@@ -9,128 +10,74 @@ Here's a professional, modern `README.md` for your GitHub repository:
 ![Express](https://img.shields.io/badge/Express-4.18-green)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3-06B6D4)
 
-A modern hotel management system for Hotel Om Shiv Shankar featuring booking management, financial tracking, and multi-property support.
+A full-featured hotel management system built for **Hotel Om Shiv Shankar**, offering booking operations, financial insights, and multi-property support—all wrapped in a sleek and modern UI.
 
-![HOSS Dashboard Preview](public/screenshot.png) <!-- Add a screenshot later -->
+<p align="center">
+  <img src="https://drive.google.com/uc?export=view&id=1FNpSJFrJjhUPuXNTWVQTmEagYWVyCHmy" alt="HOSS Dashboard Preview" width="90%" />
+</p>
+
+---
 
 ## ✨ Features
 
-- **Comprehensive Booking System**
-  - Create/edit bookings with guest details
-  - Calendar view with occupancy tracking
-  - Booking advance payments tracking
-- **Financial Management**
-  - Revenue dashboards
-  - Payment tracking
-  - Custom financial reports
-- **Multi-Property Support**
-  - Manage multiple hotels
-  - Consolidated reporting
-- **Modern UI**
-  - Dark/light mode toggle
-  - Fully responsive design
-  - Animated transitions
-- **Integration Ready**
-  - Google Apps Script backend
-  - REST API endpoints
+- 📅 **Comprehensive Booking System**
+  - Add/edit guest bookings
+  - Real-time calendar with occupancy status
+  - Track booking advances and partial payments
+
+- 💵 **Financial Management**
+  - Daily revenue tracking
+  - Room/F&B/Other income reports
+  - Auto-generated financial summaries
+
+- 🏨 **Multi-Hotel Management**
+  - Switch between multiple branches
+  - Unified financial dashboards
+
+- 🎨 **Modern & Responsive UI**
+  - Light/Dark mode toggle
+  - Framer Motion transitions
+  - Mobile-optimized design (iPhone 15+ tested)
+
+- 🔌 **Backend & API Integration**
+  - RESTful Express.js proxy
+  - Google Apps Script for Google Sheets sync (optional)
+  - JWT-auth ready (planned)
+
+---
 
 ## 🛠️ Tech Stack
 
-**Frontend:**
-- React 18 + TypeScript
-- Vite (Next-gen frontend tooling)
-- Tailwind CSS + CSS Variables
-- Framer Motion (Animations)
-- React Router v6
+### Frontend
+- ⚛️ React 18 (with Vite)
+- 🎨 Tailwind CSS 3.3 + CSS Variables
+- 📜 TypeScript 5.x
+- 🎥 Framer Motion for animations
+- 🔀 React Router v6
 
-**Backend:**
-- Express.js proxy server
-- Google Apps Script integration
-- RESTful API design
+### Backend
+- 🌐 Express.js (Proxy Layer)
+- 📊 Google Apps Script (Google Sheets sync)
+- 🔌 RESTful API design
+- 🗂 MongoDB + Mongoose (upcoming)
 
-## 🚀 Deployment
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm 9+
+- Node.js ≥ 18
+- npm ≥ 9
 
 ### Local Development
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/hoss-hotel-management.git
-   cd hoss-hotel-management
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Start proxy server (in another terminal):
-   ```bash
-   node server.js
-   ```
-
-5. Access the app at:
-   ```
-   http://localhost:3001
-   ```
-
-### Production Build
 ```bash
-npm run build
-```
+# Clone the repo
+git clone https://github.com/yourusername/hoss-hotel-management.git
+cd hoss-hotel-management
 
-## 🌐 Hosting Options
+# Install frontend
+npm install
 
-1. **Hostinger (Node.js)**
-   - Upload `dist/`, `server.js`, and `package.json` to `public_html`
-   - Configure Node.js application in Hostinger panel
-
-2. **Render.com (Recommended)**
-   - Create new Web Service
-   - Set build command: `npm install && npm run build`
-   - Set start command: `node server.js`
-
-## 📂 Project Structure
-
-```
-hoss-hotel-management/
-├── public/              # Static assets
-├── src/
-│   ├── components/      # Reusable components
-│   ├── pages/           # Page components
-│   ├── services/        # API services
-│   ├── types/           # TypeScript types
-│   ├── App.tsx          # Main app component
-│   └── main.tsx         # Entry point
-├── server.js            # Express proxy server
-├── vite.config.ts       # Vite configuration
-└── tailwind.config.js   # Tailwind configuration
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 📧 Contact
-
-Project Maintainer: Ashutosh Pant  
-Email:   
-LinkedIn: [Your Profile](https://www.linkedin.com/in/ashutosh-pant1/)
+# Start frontend
+npm run dev
