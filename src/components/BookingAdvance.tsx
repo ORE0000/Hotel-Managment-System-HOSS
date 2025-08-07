@@ -72,7 +72,7 @@ const BookingAdvance: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full p-6">
       <h1 className="text-3xl font-bold mb-6 text-[var(--text-primary)]">Booking Advance</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

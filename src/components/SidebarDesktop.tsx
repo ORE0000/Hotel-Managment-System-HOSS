@@ -81,12 +81,12 @@ const SidebarDesktop: React.FC<SidebarDesktopProps> = ({ isSidebarOpen, setIsSid
       label: 'Financial Summary',
       path: '/financial',
     },
-    {
-      tab: 'filter',
-      icon: <FiFilter size={24} />,
-      label: 'Filter Details',
-      path: '/filter',
-    },
+    // {
+    //   tab: 'filter',
+    //   icon: <FiFilter size={24} />,
+    //   label: 'Filter Details',
+    //   path: '/filter',
+    // },
     { 
       tab: 'room-list',
       icon: <FiPieChart size={24} />,

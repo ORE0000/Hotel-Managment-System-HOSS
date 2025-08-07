@@ -1144,29 +1144,6 @@ const HOSSBookings: React.FC = () => {
         </>
       )}
 
-
-      {isLoading && (
-        <div className="glass-card p-4 sm:p-6 rounded-xl">
-          {[...Array(5)].map((_: undefined, idx: number) => (
-            <div key={idx} className="animate-pulse flex space-x-4 mb-4">
-              <div className="flex-1 space-y-4 py-1">
-                <div className="h-4 bg-[var(--sidebar-hover)] rounded w-3/4"></div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-[var(--sidebar-hover)] rounded"></div>
-                  <div className="h-4 bg-[var(--sidebar-hover)] rounded w-5/6"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <div className="glass-card p-4 sm:p-6 mb-4 rounded-xl bg-red-100 text-red-600">
-          Failed to load HOSS bookings: {error.message}
-        </div>
-      )}
-
       {!isLoading && (
         <>
           <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3 sm:gap-4">

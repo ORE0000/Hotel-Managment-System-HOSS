@@ -1157,7 +1157,7 @@ const RoomList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen bg-[var(--bg-primary)] w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 sticky top-0 bg-[var(--bg-primary)] z-10 py-4 px-4 sm:px-6">
         <div className="flex items-center gap-2">
@@ -1194,7 +1194,7 @@ const RoomList = () => {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-7xl">
+      <main className="w-full px-6 py-12">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-12">
           {/* Main Room List Section */}
           <div className="w-full lg:w-2/3">
