@@ -7,7 +7,8 @@ import React, {
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchHOSSBookings, fetchHotels } from '../services/ApiService';
-import { BookingDetail } from '../types';
+import { ExtendedBookingDetail } from '../types';
+import BookingForm from './BookingForm';
 import {
   format,
   startOfWeek,
@@ -23,6 +24,7 @@ import {
   subDays,
   parseISO,
   startOfDay,
+  differenceInDays,
 } from 'date-fns';
 import {
   FiCalendar,
@@ -46,29 +48,416 @@ Modal.setAppElement('#root');
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  booking?: BookingDetail;
+  booking?: ExtendedBookingDetail;
 }
 
 interface TooltipProps {
   isOpen: boolean;
-  bookings: BookingDetail[];
+  bookings: ExtendedBookingDetail[];
   date: Date;
   position: { top: number; left: number };
   onClose: () => void;
   onAddBooking: () => void;
-  onBookingClick: (booking: BookingDetail) => void;
+  onBookingClick: (booking: ExtendedBookingDetail) => void;
 }
+
+const calculateBookingCounts = (
+  date: Date,
+  bookings: ExtendedBookingDetail[] | undefined
+) => {
+  const dayBookings = getBookingsForDate(date, bookings || []);
+  const counts = {
+    Confirmed: 0,
+    Cancelled: 0,
+    'On Hold': 0,
+  };
+  dayBookings.forEach((booking) => {
+    if (booking.status) {
+      counts[booking.status as keyof typeof counts]++;
+    }
+  });
+  return counts;
+};
+
+const getBookingsForDate = (
+  date: Date,
+  bookings: ExtendedBookingDetail[] | undefined
+): ExtendedBookingDetail[] => {
+  if (!bookings || !Array.isArray(bookings)) {
+    return [];
+  }
+  return bookings.filter((booking) => {
+    try {
+      let checkIn = parseISO(booking.checkIn);
+      let checkOut = parseISO(booking.checkOut);
+
+      if (isNaN(checkIn.getTime())) {
+        try {
+          checkIn = new Date(
+            booking.checkIn.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')
+          );
+        } catch {
+          // Continue to validation
+        }
+      }
+      if (isNaN(checkOut.getTime())) {
+        try {
+          checkOut = new Date(
+            booking.checkOut.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')
+          );
+        } catch {
+          // Continue to validation
+        }
+      }
+
+      if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+        console.warn(
+          `Invalid dates for booking: ${booking.guestName}, checkIn: ${booking.checkIn}, checkOut: ${booking.checkOut}`
+        );
+        return false;
+      }
+
+      const isBookingIncluded =
+        isSameDay(date, checkIn) ||
+        isWithinInterval(date, { start: checkIn, end: subDays(checkOut, 1) });
+      return isBookingIncluded;
+    } catch (error) {
+      console.error(`Error processing booking: ${booking.guestName}`, error);
+      return false;
+    }
+  });
+};
+
+const hasBookings = (
+  date: Date,
+  bookings: ExtendedBookingDetail[] | undefined
+): boolean => {
+  const dayBookings = getBookingsForDate(date, bookings);
+  return dayBookings.length > 0;
+};
+
+const getTotalRooms = (
+  roomName: { [key: string]: string | number | undefined } | undefined
+): number => {
+  if (!roomName) return 0;
+  return (
+    parseInt(roomName.doubleBed?.toString() || '0', 10) +
+    parseInt(roomName.tripleBed?.toString() || '0', 10) +
+    parseInt(roomName.fourBed?.toString() || '0', 10) +
+    parseInt(roomName.extraBed?.toString() || '0', 10) +
+    parseInt(roomName.kitchen?.toString() || '0', 10)
+  );
+};
+
+const getStatusClass = (status: string) =>
+  ({
+    Confirmed: 'badge-confirmed',
+    Hold: 'badge-hold',
+    Cancelled: 'badge-cancelled',
+  })[status] || 'badge-no-show';
+
+const renderDay = (
+  date: Date,
+  bookings: ExtendedBookingDetail[] | undefined,
+  currentDate: Date,
+  isOtherMonth: boolean,
+  view: 'month' | 'week' | 'day',
+  onClick?: (date: Date, element: HTMLElement) => void,
+  onBookingClick?: (booking: ExtendedBookingDetail) => void,
+  setIsBookingModalOpen?: (open: boolean) => void
+) => {
+  const dayBookings = getBookingsForDate(date, bookings);
+  const bookingCounts = calculateBookingCounts(date, bookings);
+  const hasBooking = hasBookings(date, bookings);
+
+  if (view === 'month') {
+    return (
+      <motion.div
+        key={format(date, 'yyyy-MM-dd')}
+        className={`calendar-day p-2 sm:p-3 rounded-lg glass-card ${
+          isOtherMonth
+            ? 'bg-[var(--card-bg)] text-[var(--text-secondary)] opacity-50'
+            : 'bg-[var(--card-bg)] hover:bg-[var(--sidebar-hover)] cursor-pointer'
+        } ${dayBookings.length > 0 && dayBookings.some((b) => b.status === 'Confirmed') ? 'badge-confirmed' : ''} ${
+          isSameDay(date, currentDate) && !isOtherMonth
+            ? 'border-2 border-[var(--icon-bg-blue)]'
+            : ''
+        }`}
+        onClick={() =>
+          !isOtherMonth &&
+          onClick &&
+          onClick(
+            date,
+            document.getElementById(`day-${format(date, 'yyyy-MM-dd')}`) ||
+              document.createElement('div')
+          )
+        }
+        onDoubleClick={() =>
+          !isOtherMonth && setIsBookingModalOpen && setIsBookingModalOpen(true)
+        }
+        id={`day-${format(date, 'yyyy-MM-dd')}`}
+        role="button"
+        aria-label={`View bookings for ${format(date, 'MMMM d, yyyy')}`}
+        whileHover={{
+          scale: 1.03,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <div className="calendar-day-content">
+          <div className="day-number text-right font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+            {date.getDate()}
+          </div>
+          {!isOtherMonth && dayBookings.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1 sm:mt-2 justify-end">
+              {Object.entries(bookingCounts).map(
+                ([status, count]) =>
+                  count > 0 && (
+                    <motion.div
+                      key={status}
+                      className={`booking-indicator w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${getStatusClass(
+                        status
+                      )}`}
+                      title={`${count} ${status} booking(s)`}
+                      whileHover={{ scale: 1.2 }}
+                    ></motion.div>
+                  )
+              )}
+            </div>
+          )}
+          {!isOtherMonth && dayBookings.length > 0 && (
+            <div className="text-xs text-right mt-1 sm:mt-2 text-[var(--text-secondary)]">
+              {bookingCounts.Confirmed > 0 && (
+                <div>Confirmed: {bookingCounts.Confirmed}</div>
+              )}
+              {bookingCounts.Cancelled > 0 && (
+                <div>Cancelled: {bookingCounts.Cancelled}</div>
+              )}
+              {bookingCounts['On Hold'] > 0 && (
+                <div>On Hold: {bookingCounts['On Hold']}</div>
+              )}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  } else if (view === 'week') {
+    return (
+      <motion.div
+        key={format(date, 'yyyy-MM-dd')}
+        className="calendar-day p-4 rounded-xl neumorphic-card bg-[var(--card-bg)] border border-[var(--border-color)] shadow-glow"
+        id={`day-${format(date, 'yyyy-MM-dd')}`}
+        role="button"
+        aria-label={`View bookings for ${format(date, 'MMMM d, yyyy')}`}
+        whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="calendar-day-content relative">
+          <div className="day-header mb-4">
+            <div className="flex justify-between items-center">
+              <div className="day-number text-2xl font-bold text-gradient">
+                {format(date, 'd')}
+              </div>
+              {isSameDay(date, new Date()) && (
+                <div className="absolute top-0 right-0 w-3 h-3 bg-[var(--icon-bg-blue)] rounded-full shadow-glow"></div>
+              )}
+            </div>
+            <div className="day-name text-sm font-medium text-[var(--text-secondary)] mt-1">
+              {format(date, 'EEEE')}
+            </div>
+          </div>
+          {!isOtherMonth && dayBookings.length > 0 ? (
+            <div className="space-y-3">
+              {dayBookings.map((booking) => {
+                const totalRooms = getTotalRooms(booking.roomName);
+                return (
+                  <motion.div
+                    key={`${booking.guestName}-${booking.checkIn}-${booking.checkOut}`}
+                    className="p-3 rounded-lg glass-card bg-[var(--card-bg)]/80 border border-[var(--border-color)] hover:bg-[var(--sidebar-hover)] transition-all duration-300 cursor-pointer shadow-sm"
+                    onClick={() => onBookingClick && onBookingClick(booking)}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="truncate font-semibold text-[var(--text-primary)]">
+                        {booking.guestName}
+                      </div>
+                      <span
+                        className={`status-badge ${getStatusClass(booking.status)}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </div>
+                    {totalRooms > 0 && (
+                      <div className="text-xs text-[var(--text-secondary)] mt-1">
+                        {totalRooms} Room{totalRooms > 1 ? 's' : ''}
+                      </div>
+                    )}
+                    <div className="text-xs text-[var(--text-secondary)] mt-1">
+                      Hotel: {booking.hotel}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-sm text-[var(--text-secondary)] italic">
+              No bookings
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  } else if (view === 'day') {
+    return (
+      <motion.div
+        key={format(date, 'yyyy-MM-dd')}
+        className={`calendar-day p-3 rounded-xl glass-card bg-[var(--card-bg)] border border-[var(--border-color)] shadow-lg ${
+          isOtherMonth
+            ? 'opacity-50 text-[var(--text-secondary)]'
+            : 'hover:bg-gradient-to-br hover:from-[var(--card-bg)] hover:to-[var(--sidebar-hover)]'
+        } ${isSameDay(date, currentDate) && !isOtherMonth ? 'border-2 border-[var(--icon-bg-blue)]' : ''}`}
+        id={`day-${format(date, 'yyyy-MM-dd')}`}
+        role="button"
+        aria-label={`View bookings for ${format(date, 'MMMM d, yyyy')}`}
+        whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="calendar-day-content">
+          <div className="day-number text-center font-bold text-lg text-[var(--text-primary)] mb-2">
+            {format(date, 'd')}
+          </div>
+          <div className="day-name text-xs text-[var(--text-secondary)] mb-3">
+            {format(date, 'EEE')}
+          </div>
+          {!isOtherMonth && dayBookings.length > 0 && (
+            <div className="space-y-2">
+              {dayBookings.map((booking) => {
+                const totalRooms = getTotalRooms(booking.roomName);
+                return (
+                  <motion.div
+                    key={`${booking.guestName}-${booking.checkIn}-${booking.checkOut}`}
+                    className="p-2 rounded-lg bg-white/10 backdrop-blur-md text-sm font-medium text-[var(--text-primary)] hover:bg-white/20 transition-all duration-200 cursor-pointer"
+                    onClick={() => onBookingClick && onBookingClick(booking)}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="truncate">{booking.guestName}</div>
+                    {totalRooms > 0 && (
+                      <div className="text-xs text-[var(--text-secondary)]">
+                        {totalRooms} Room{totalRooms > 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+          {isSameDay(date, new Date()) && (
+            <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--icon-bg-blue)] rounded-full"></div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+  return null;
+};
+
+const BookingTooltip: React.FC<TooltipProps> = ({
+  isOpen,
+  bookings,
+  date,
+  position,
+  onClose,
+  onAddBooking,
+  onBookingClick,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      className="absolute z-50 w-[90vw] sm:w-72 p-3 sm:p-4 glass-card rounded-lg shadow-lg border border-[var(--border-color)]"
+      style={{ top: position.top, left: position.left }}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="flex justify-between items-start mb-2 sm:mb-2">
+        <h4 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+          Bookings for{' '}
+          <span className="text-gradient">{format(date, 'MMM d')}</span>
+        </h4>
+        <motion.button
+          onClick={onClose}
+          className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          aria-label="Close tooltip"
+        >
+          <FiX size={16} />
+        </motion.button>
+      </div>
+      <div className="space-y-2 sm:space-y-3 max-h-56 sm:max-h-64 overflow-y-auto scrollbar-thin">
+        {bookings.map((booking) => (
+          <motion.div
+            key={`${booking.guestName}-${booking.checkIn}-${booking.checkOut}`}
+            className="p-2 sm:p-3 rounded-lg hover:bg-[var(--sidebar-hover)] cursor-pointer glass-card"
+            onClick={() => {
+              onClose();
+              onBookingClick(booking);
+            }}
+            whileHover={{
+              scale: 1.02,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            }}
+          >
+            <div className="font-medium truncate text-sm sm:text-base text-[var(--text-primary)]">
+              {booking.guestName}
+            </div>
+            <div className="flex justify-between text-xs text-[var(--text-secondary)] mt-1">
+              <span className="truncate">{booking.hotel}</span>
+              <span
+                className={`status-badge ${getStatusClass(booking.status)}`}
+              >
+                {booking.status}
+              </span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[var(--border-color)]">
+        <motion.button
+          onClick={() => {
+            onClose();
+            onAddBooking();
+          }}
+          className="w-full text-center btn-primary text-xs sm:text-sm flex items-center justify-center gap-2"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Add new booking"
+        >
+          <FiPlus className="inline" /> Add Booking
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+};
 
 const CalendarView = () => {
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [viewDate, setViewDate] = useState<Date>(new Date());
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-  const [tooltipBookings, setTooltipBookings] = useState<BookingDetail[]>([]);
+  const [tooltipBookings, setTooltipBookings] = useState<
+    ExtendedBookingDetail[]
+  >([]);
   const [tooltipDate, setTooltipDate] = useState<Date | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [selectedBooking, setSelectedBooking] = useState<
-    BookingDetail | undefined
+    ExtendedBookingDetail | undefined
   >(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -102,7 +491,7 @@ const CalendarView = () => {
     data: bookings,
     error,
     isLoading,
-  } = useQuery<BookingDetail[], Error>({
+  } = useQuery<ExtendedBookingDetail[], Error>({
     queryKey: ['hossBookings', format(viewDate, 'yyyy-MM'), view],
     queryFn: () =>
       fetchHOSSBookings({
@@ -147,98 +536,6 @@ const CalendarView = () => {
     },
   };
 
-  const getStatusClass = (status: string) =>
-    ({
-      Confirmed: 'badge-confirmed',
-      Hold: 'badge-hold',
-      Cancelled: 'badge-cancelled bg-red-500 text-white',
-    })[status] || 'badge-no-show';
-
-  const getStatusTextClass = (status: string) =>
-    ({
-      Confirmed: 'badge-confirmed',
-      Hold: 'badge-hold',
-      Cancelled: 'badge-cancelled bg-red-500 text-white',
-    })[status] || 'badge-no-show';
-
-  const getAvailabilityClass = (percentage: number) => {
-    if (percentage > 70) return 'availability-high';
-    if (percentage > 40) return 'availability-medium';
-    if (percentage > 0) return 'availability-low';
-    return 'availability-none';
-  };
-
-  const getBookingsForDate = (
-    date: Date,
-    bookings: BookingDetail[] | undefined
-  ): BookingDetail[] => {
-    if (!bookings || !Array.isArray(bookings)) {
-      return [];
-    }
-    return bookings.filter((booking) => {
-      try {
-        let checkIn = parseISO(booking.checkIn);
-        let checkOut = parseISO(booking.checkOut);
-
-        if (isNaN(checkIn.getTime())) {
-          try {
-            checkIn = new Date(
-              booking.checkIn.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')
-            );
-          } catch {
-            // Continue to validation
-          }
-        }
-        if (isNaN(checkOut.getTime())) {
-          try {
-            checkOut = new Date(
-              booking.checkOut.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')
-            );
-          } catch {
-            // Continue to validation
-          }
-        }
-
-        if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
-          console.warn(
-            `Invalid dates for booking: ${booking.guestName}, checkIn: ${booking.checkIn}, checkOut: ${booking.checkOut}`
-          );
-          return false;
-        }
-
-        const isBookingIncluded =
-          isSameDay(date, checkIn) ||
-          isWithinInterval(date, { start: checkIn, end: subDays(checkOut, 1) });
-        return isBookingIncluded;
-      } catch (error) {
-        console.error(`Error processing booking: ${booking.guestName}`, error);
-        return false;
-      }
-    });
-  };
-
-  const calculateAvailability = (
-    date: Date,
-    bookings: BookingDetail[] | undefined
-  ) => {
-    const dayBookings = getBookingsForDate(date, bookings || []).filter(
-      (booking) => booking.status !== 'Cancelled'
-    );
-    const totalBooked = dayBookings.reduce(
-      (sum, booking) =>
-        sum + (parseInt(booking.noOfRooms?.toString() || '0', 10) || 0),
-      0
-    );
-    let totalCapacity = 0;
-    for (const hotel in hotelCapacity) {
-      totalCapacity += hotelCapacity[hotel].totalRooms || 0;
-    }
-    const available = Math.max(0, totalCapacity - totalBooked);
-    const percentage =
-      totalCapacity > 0 ? Math.round((available / totalCapacity) * 100) : 0;
-    return { available, booked: totalBooked, total: totalCapacity, percentage };
-  };
-
   const navigatePeriod = (direction: number) => {
     const newDate = new Date(viewDate);
     if (view === 'month') {
@@ -253,30 +550,33 @@ const CalendarView = () => {
   };
 
   const handleDayClick = (date: Date, el: HTMLElement) => {
-    const dayBookings = getBookingsForDate(date, filteredBookings || []);
-    if (dayBookings.length === 0) {
-      setIsBookingModalOpen(true);
-      return;
+    if (view === 'month') {
+      const dayBookings = getBookingsForDate(date, filteredBookings);
+      if (dayBookings.length === 0) {
+        setIsBookingModalOpen(true);
+        return;
+      }
+
+      const rect = el.getBoundingClientRect();
+      const tooltipWidth =
+        window.innerWidth < 640 ? window.innerWidth - 40 : 256;
+      const leftPosition = rect.left + rect.width / 2 - tooltipWidth / 2;
+      const adjustedLeft = Math.max(
+        10,
+        Math.min(leftPosition, window.innerWidth - tooltipWidth - 10)
+      );
+
+      setTooltipBookings(dayBookings);
+      setTooltipDate(date);
+      setTooltipPosition({
+        top: rect.bottom + window.scrollY + 5,
+        left: adjustedLeft,
+      });
+      setIsTooltipOpen(true);
     }
-
-    const rect = el.getBoundingClientRect();
-    const tooltipWidth = window.innerWidth < 640 ? window.innerWidth - 40 : 256;
-    const leftPosition = rect.left + rect.width / 2 - tooltipWidth / 2;
-    const adjustedLeft = Math.max(
-      10,
-      Math.min(leftPosition, window.innerWidth - tooltipWidth - 10)
-    );
-
-    setTooltipBookings(dayBookings);
-    setTooltipDate(date);
-    setTooltipPosition({
-      top: rect.bottom + window.scrollY + 5,
-      left: adjustedLeft,
-    });
-    setIsTooltipOpen(true);
   };
 
-  const handleBookingClick = (booking: BookingDetail) => {
+  const handleBookingClick = (booking: ExtendedBookingDetail) => {
     setSelectedBooking(booking);
     setIsBookingModalOpen(true);
     setIsTooltipOpen(false);
@@ -309,642 +609,293 @@ const CalendarView = () => {
 
   const copyBookingDetails = () => {
     if (!selectedBooking) return;
-    const text = `Guest: ${selectedBooking.guestName}\nPlan: ${selectedBooking.plan}\nCheck-In: ${selectedBooking.checkIn}\nCheck-Out: ${selectedBooking.checkOut}\nHotel: ${selectedBooking.hotel}\nPAX: ${selectedBooking.pax || 'N/A'}\nRooms: ${selectedBooking.noOfRooms || 'N/A'}\nExtra Bed: ${selectedBooking.extraBed || 'N/A'}\nKitchen: ${selectedBooking.kitchen || 'N/A'}\nStatus: ${selectedBooking.status}\nTotal Bill: ₹${selectedBooking.totalBill ?? 'N/A'}\nAdvance: ₹${selectedBooking.advance || '0'}\nDue: ₹${(selectedBooking.totalBill ?? 0) - (selectedBooking.advance || 0)}`;
+    const duration =
+      selectedBooking.checkIn && selectedBooking.checkOut
+        ? differenceInDays(
+            parseISO(selectedBooking.checkOut),
+            parseISO(selectedBooking.checkIn)
+          )
+        : 0;
+
+    const roomDetails = selectedBooking.roomName || {};
+    const roomRent = selectedBooking.roomRent || {};
+    const usedRooms = Object.entries(roomDetails as { [key: string]: string })
+      .filter(([_, value]) => value && parseInt(value, 10) > 0)
+      .map(([key, value]) => ({
+        name: key.charAt(0).toUpperCase() + key.slice(1).replace(/Bed$/, ''),
+        count: value,
+        rate: roomRent[key as keyof typeof roomRent] || 0,
+      }));
+
+    const text = `Guest Details for ${selectedBooking.guestName}
+==================
+Guest Information:
+- Name: ${selectedBooking.guestName}
+- Contact: ${selectedBooking.contact || 'N/A'}
+- Hotel: ${selectedBooking.hotel}
+
+Booking Details:
+- Check-In: ${selectedBooking.checkIn}
+- Check-Out: ${selectedBooking.checkOut}
+- Duration: ${duration} days
+- PAX: ${selectedBooking.pax || 'N/A'}
+- Status: ${selectedBooking.status}
+
+Room Details:
+${usedRooms.map((r) => `${r.name}: ${r.count} (Rate: ₹${parseFloat(r.rate.toString()).toLocaleString()}${Number(selectedBooking.discount?.[r.name.toLowerCase() as keyof typeof selectedBooking.discount] || 0) > 0 ? `, Discount: ₹${(selectedBooking.discount?.[r.name.toLowerCase() as keyof typeof selectedBooking.discount] || 0).toLocaleString()}` : ''})`).join('\n')}
+
+Financial Summary:
+- Total Bill: ₹${(selectedBooking.billAmount || 0).toLocaleString()}
+- Advance Paid: ₹${(selectedBooking.advance || 0).toLocaleString()}
+- Due Amount: ₹${((selectedBooking.billAmount || 0) - (selectedBooking.advance || 0)).toLocaleString()}
+- Cash-In: ₹${(selectedBooking.cashIn || 0).toLocaleString()}
+- Cash-Out: ₹${(selectedBooking.cashOut || 0).toLocaleString()}
+- Payment Mode: ${selectedBooking.modeOfPayment || 'N/A'}
+- To Account: ${selectedBooking.toAccount || 'N/A'}
+- Scheme: ${selectedBooking.scheme || 'N/A'}
+- Date: ${selectedBooking.dateBooked || 'N/A'}
+
+Generated by: Hotel Om Shiv Shankar
+on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: true })}`;
     navigator.clipboard.writeText(text);
-    toast.success('Booking details copied to clipboard');
+    toast.success('Booking details copied to clipboard!');
   };
 
   const printBookingDetails = () => {
     if (!selectedBooking) return;
     const doc = new jsPDF();
     doc.setFontSize(12);
-    doc.text('Booking Details', 10, 10);
-    doc.text(`Guest: ${selectedBooking.guestName}`, 10, 20);
-    doc.text(`Plan: ${selectedBooking.plan}`, 10, 30);
-    doc.text(`Check-In: ${selectedBooking.checkIn}`, 10, 40);
-    doc.text(`Check-Out: ${selectedBooking.checkOut}`, 10, 50);
-    doc.text(`Hotel: ${selectedBooking.hotel}`, 10, 60);
-    doc.text(`PAX: ${selectedBooking.pax || 'N/A'}`, 10, 70);
-    doc.text(`Rooms: ${selectedBooking.noOfRooms || 'N/A'}`, 10, 80);
-    doc.text(`Extra Bed: ${selectedBooking.extraBed || 'N/A'}`, 10, 90);
-    doc.text(`Kitchen: ${selectedBooking.kitchen || 'N/A'}`, 10, 100);
-    doc.text(`Status: ${selectedBooking.status}`, 10, 110);
-    doc.text(`Total Bill: ₹${selectedBooking.totalBill ?? 'N/A'}`, 10, 120);
-    doc.text(`Advance: ₹${selectedBooking.advance || '0'}`, 10, 130);
+    doc.text(`Guest Details for ${selectedBooking.guestName}`, 10, 10);
+    doc.text('==================', 10, 15);
+    doc.text('Guest Information:', 10, 20);
+    doc.text(`- Name: ${selectedBooking.guestName}`, 10, 25);
+    doc.text(`- Contact: ${selectedBooking.contact || 'N/A'}`, 10, 30);
+    doc.text(`- Hotel: ${selectedBooking.hotel}`, 10, 35);
+    doc.text('Booking Details:', 10, 40);
+    doc.text(`- Check-In: ${selectedBooking.checkIn}`, 10, 45);
+    doc.text(`- Check-Out: ${selectedBooking.checkOut}`, 10, 50);
     doc.text(
-      `Due: ₹${(selectedBooking.totalBill ?? 0) - (selectedBooking.advance || 0)}`,
+      `- Duration: ${differenceInDays(parseISO(selectedBooking.checkOut), parseISO(selectedBooking.checkIn))} days`,
       10,
-      140
+      55
     );
-
-    doc.save(
-      `booking_${selectedBooking.guestName}_${selectedBooking.checkIn}.pdf`
+    doc.text(`- PAX: ${selectedBooking.pax || 'N/A'}`, 10, 60);
+    doc.text(`- Status: ${selectedBooking.status}`, 10, 65);
+    doc.text('Room Details:', 10, 70);
+    let y = 75;
+    const roomDetails = selectedBooking.roomName || {};
+    const roomRent = selectedBooking.roomRent || {};
+    Object.entries(roomDetails).forEach(([key, value]) => {
+      if (parseInt(value?.toString() || '0', 10) > 0) {
+        const roomName =
+          key.charAt(0).toUpperCase() + key.slice(1).replace(/Bed$/, '');
+        doc.text(
+          `- ${roomName}: ${value} (Rate: ₹${parseFloat((roomRent[key as keyof typeof roomRent] || '0').toString()).toLocaleString()})`,
+          10,
+          y
+        );
+        y += 5;
+      }
+    });
+    doc.text('Financial Summary:', 10, y);
+    y += 5;
+    doc.text(
+      `- Total Bill: ₹${(selectedBooking.billAmount || 0).toLocaleString()}`,
+      10,
+      y
     );
-    toast.success('Booking details downloaded as PDF');
+    y += 5;
+    doc.text(
+      `- Advance Paid: ₹${(selectedBooking.advance || 0).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(
+      `- Due Amount: ₹${((selectedBooking.billAmount || 0) - (selectedBooking.advance || 0)).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(
+      `- Cash-In: ₹${(selectedBooking.cashIn || 0).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(
+      `- Cash-Out: ₹${(selectedBooking.cashOut || 0).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(
+      `- Payment Mode: ${selectedBooking.modeOfPayment || 'N/A'}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(`- To Account: ${selectedBooking.toAccount || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text(`- Scheme: ${selectedBooking.scheme || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text(`- Date: ${selectedBooking.dateBooked || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text('Generated by: Hotel Om Shiv Shankar', 10, y);
+    y += 5;
+    doc.text(
+      `on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: true })}`,
+      10,
+      y
+    );
+    doc.save(`Booking_Details_${selectedBooking.guestName}.pdf`);
   };
 
-  const DetailItem: React.FC<{ label: string; value: string | number }> = ({
-    label,
-    value,
-  }) => (
-    <div>
-      <p className="text-sm text-[var(--text-secondary)]">{label}</p>
-      <p className="font-medium text-base text-[var(--text-primary)]">
-        {value}
-      </p>
-    </div>
-  );
+  const renderMonthView = () => {
+    const monthStart = startOfMonth(viewDate);
+    const monthEnd = endOfMonth(viewDate);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    const days = [];
+    let currentDate = startDate;
 
-  const BookingModal: React.FC<BookingModalProps> = ({
-    isOpen,
-    onClose,
-    booking,
-  }) => {
-    if (!isOpen) return null;
-
-    const calculateDue = (
-      totalBill: number | string | undefined,
-      advance: number | string | undefined
-    ) => {
-      const total = parseFloat(totalBill?.toString() || '0') || 0;
-      const adv = parseFloat(advance?.toString() || '0') || 0;
-      return total - adv;
-    };
-
-    return (
-      <Modal
-        isOpen={isOpen}
-        onRequestClose={onClose}
-        className="modal p-4 sm:p-6 rounded-xl w-full max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto mx-auto mt-12 sm:mt-20"
-        overlayClassName="modal-overlay"
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg sm:text-xl font-bold text-gradient">
-              Booking Details
-            </h3>
-            <motion.button
-              onClick={onClose}
-              className="modal-close-button"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Close modal"
-            >
-              <FiX size={18} />
-            </motion.button>
-          </div>
-          {booking ? (
-            <div className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div className="space-y-2">
-                  <DetailItem label="Guest" value={booking.guestName} />
-                  <DetailItem label="Plan" value={booking.plan} />
-                  <DetailItem label="Check-In" value={booking.checkIn} />
-                  <DetailItem label="Check-Out" value={booking.checkOut} />
-                  <DetailItem label="Hotel" value={booking.hotel} />
-                </div>
-                <div className="space-y-2">
-                  <DetailItem label="PAX" value={booking.pax || 'N/A'} />
-                  <DetailItem
-                    label="Rooms"
-                    value={booking.noOfRooms || 'N/A'}
-                  />
-                  <DetailItem
-                    label="Extra Bed"
-                    value={booking.extraBed || 'N/A'}
-                  />
-                  <DetailItem
-                    label="Kitchen"
-                    value={booking.kitchen || 'N/A'}
-                  />
-                  <DetailItem label="Advance" value={booking.advance || '0'} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div className="p-2 sm:p-3 bg-[var(--card-bg)] rounded-lg">
-                  <p className="text-sm text-[var(--text-secondary)]">Status</p>
-                  <span
-                    className={`badge badge-${booking.status.toLowerCase()}`}
-                  >
-                    {booking.status}
-                  </span>
-                </div>
-                <div className="p-2 sm:p-3 bg-[var(--card-bg)] rounded-lg">
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    Total Bill
-                  </p>
-                  <p className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
-                    ₹{booking.totalBill ?? 'N/A'}
-                  </p>
-                </div>
-                <div className="p-2 sm:p-3 bg-[var(--card-bg)] rounded-lg">
-                  <p className="text-sm text-[var(--text-secondary)]">Due</p>
-                  <p className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
-                    ₹{calculateDue(booking.totalBill, booking.advance)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2 sm:space-x-3">
-                <motion.button
-                  onClick={copyBookingDetails}
-                  className="btn-primary text-xs sm:text-sm flex items-center gap-2"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Copy booking details"
-                >
-                  <FiCopy className="inline" />
-                  Copy
-                </motion.button>
-                <motion.button
-                  onClick={printBookingDetails}
-                  className="btn-primary text-xs sm:text-sm flex items-center gap-2"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Download booking details as PDF"
-                >
-                  <FiDownload className="inline" />
-                  PDF
-                </motion.button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-[var(--text-secondary)] text-center text-sm sm:text-base">
-              No booking selected
-            </p>
-          )}
-        </motion.div>
-      </Modal>
-    );
-  };
-
-  const BookingTooltip: React.FC<TooltipProps> = ({
-    isOpen,
-    bookings,
-    date,
-    position,
-    onClose,
-    onAddBooking,
-    onBookingClick,
-  }) => {
-    if (!isOpen) return null;
-
-    return (
-      <motion.div
-        className="absolute z-50 w-[90vw] sm:w-72 p-3 sm:p-4 glass-card rounded-lg shadow-lg border border-[var(--border-color)]"
-        style={{ top: position.top, left: position.left }}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="flex justify-between items-start mb-2 sm:mb-2">
-          <h4 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
-            Bookings for{' '}
-            <span className="text-gradient">{format(date, 'MMM d')}</span>
-          </h4>
-          <motion.button
-            onClick={onClose}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Close tooltip"
-          >
-            <FiX size={16} />
-          </motion.button>
-        </div>
-        <div className="space-y-2 sm:space-y-3 max-h-56 sm:max-h-64 overflow-y-auto scrollbar-thin">
-          {bookings.map((booking) => (
-            <motion.div
-              key={booking.guestName + booking.checkIn}
-              className="p-2 sm:p-3 rounded-lg hover:bg-[var(--sidebar-hover)] cursor-pointer glass-card"
-              onClick={() => onBookingClick(booking)}
-              whileHover={{
-                scale: 1.02,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              }}
-            >
-              <div className="font-medium truncate text-sm sm:text-base text-[var(--text-primary)]">
-                {booking.guestName}
-              </div>
-              <div className="flex justify-between text-xs text-[var(--text-secondary)] mt-1">
-                <span className="truncate">{booking.hotel}</span>
-                <span
-                  className={`status-badge ${getStatusTextClass(booking.status)}`}
-                >
-                  {booking.status}
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[var(--border-color)]">
-          <motion.button
-            onClick={onAddBooking}
-            className="w-full text-center btn-primary text-xs sm:text-sm flex items-center justify-center gap-2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Add new booking"
-          >
-            <FiPlus className="inline" /> Add Booking
-          </motion.button>
-        </div>
-      </motion.div>
-    );
-  };
-
-  const SkeletonLoader = ({
-    viewType,
-  }: {
-    viewType: 'month' | 'week' | 'day';
-  }) => {
-    if (viewType === 'month') {
-      return (
-        <div className="calendar-skeleton p-4 sm:p-6 rounded-xl animate-pulse">
-          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-4">
-            {[...Array(7)].map((_, idx) => (
-              <div
-                key={idx}
-                className="h-6 bg-[var(--sidebar-hover)] rounded"
-              ></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1 sm:gap-2">
-            {[...Array(35)].map((_, idx) => (
-              <div
-                key={idx}
-                className="h-24 sm:h-32 bg-[var(--sidebar-hover)] rounded-lg"
-              ></div>
-            ))}
-          </div>
-        </div>
-      );
+    while (currentDate <= endDate) {
+      days.push(currentDate);
+      currentDate = addDays(currentDate, 1);
     }
-    if (viewType === 'week') {
-      return (
-        <div className="calendar-skeleton p-4 sm:p-6 rounded-xl animate-pulse">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4">
-            {[...Array(7)].map((_, idx) => (
-              <div
-                key={idx}
-                className="h-64 sm:h-80 bg-[var(--sidebar-hover)] rounded-lg"
-              ></div>
-            ))}
-          </div>
-        </div>
-      );
-    }
+
     return (
-      <div className="calendar-skeleton p-4 sm:p-6 rounded-xl animate-pulse">
-        <div className="h-12 bg-[var(--sidebar-hover)] rounded mb-4"></div>
-        <div className="h-24 bg-[var(--sidebar-hover)] rounded mb-4"></div>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, idx) => (
-            <div
-              key={idx}
-              className="h-32 bg-[var(--sidebar-hover)] rounded"
-            ></div>
-          ))}
-        </div>
+      <div className="grid grid-cols-7 gap-2">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+          <div
+            key={day}
+            className="text-center font-medium text-[var(--text-secondary)] text-xs sm:text-sm"
+          >
+            {day}
+          </div>
+        ))}
+        {days.map((date) => {
+          const isOtherMonth = !isWithinInterval(date, {
+            start: monthStart,
+            end: monthEnd,
+          });
+          return renderDay(
+            date,
+            filteredBookings,
+            new Date(),
+            isOtherMonth,
+            view,
+            handleDayClick,
+            undefined,
+            setIsBookingModalOpen
+          );
+        })}
       </div>
     );
   };
 
-  const Day: React.FC<{
-    date: Date;
-    isOtherMonth: boolean;
-    currentDate: Date;
-    onClick?: (date: Date, el: HTMLElement) => void;
-  }> = ({ date, isOtherMonth, currentDate, onClick }) => {
-    const dayBookings = getBookingsForDate(date, filteredBookings || []);
-    const availability = calculateAvailability(date, filteredBookings || []);
-    const availabilityClass = getAvailabilityClass(availability.percentage);
+  const renderWeekView = () => {
+    const weekStart = startOfWeek(viewDate, { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(viewDate, { weekStartsOn: 0 });
+    const days = [];
+    let currentDate = weekStart;
 
-    const statusCounts = {
-      Confirmed: 0,
-      Hold: 0,
-      Cancelled: 0,
-    };
-
-    dayBookings.forEach((booking) => {
-      statusCounts[booking.status as keyof typeof statusCounts]++;
-    });
+    while (currentDate <= weekEnd) {
+      days.push(currentDate);
+      currentDate = addDays(currentDate, 1);
+    }
 
     return (
-      <motion.div
-        className={`calendar-day p-2 sm:p-3 rounded-lg glass-card ${
-          isOtherMonth
-            ? 'bg-[var(--card-bg)] text-[var(--text-secondary)] opacity-50'
-            : 'bg-[var(--card-bg)] hover:bg-[var(--sidebar-hover)] cursor-pointer'
-        } ${availabilityClass} ${
-          isSameDay(date, currentDate) && !isOtherMonth
-            ? 'border-2 border-[var(--icon-bg-blue)]'
-            : ''
-        }`}
-        onClick={() =>
-          !isOtherMonth &&
-          onClick &&
-          onClick(
+      <div className="grid grid-cols-1 sm:grid-cols-7 gap-4 p-4 bg-[var(--card-bg)]/50 rounded-xl shadow-xl border border-[var(--border-color)]">
+        {days.map((date) => {
+          const isOtherMonth = !isWithinInterval(date, {
+            start: startOfMonth(viewDate),
+            end: endOfMonth(viewDate),
+          });
+          return renderDay(
             date,
-            document.getElementById(`day-${format(date, 'yyyy-MM-dd')}`) ||
-              document.createElement('div')
-          )
-        }
-        onDoubleClick={() => !isOtherMonth && setIsBookingModalOpen(true)}
-        id={`day-${format(date, 'yyyy-MM-dd')}`}
-        role="button"
-        aria-label={`View bookings for ${format(date, 'MMMM d, yyyy')}`}
-        whileHover={{
-          scale: 1.03,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <div className="calendar-day-content">
-          <div className="day-number text-right font-semibold text-sm sm:text-base text-[var(--text-primary)]">
-            {date.getDate()}
-          </div>
-          {!isOtherMonth && dayBookings.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1 sm:mt-2 justify-end">
-              {Object.entries(statusCounts).map(
-                ([status, count]) =>
-                  count > 0 && (
-                    <motion.div
-                      key={status}
-                      className={`booking-indicator w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${getStatusClass(
-                        status
-                      )}`}
-                      title={`${count} ${status} booking(s)`}
-                      whileHover={{ scale: 1.2 }}
-                    ></motion.div>
-                  )
-              )}
-            </div>
-          )}
-          {!isOtherMonth && (
-            <div className="text-xs text-right mt-1 sm:mt-2 text-[var(--text-secondary)]">
-              {availability.available} avail
-            </div>
-          )}
-        </div>
-      </motion.div>
+            filteredBookings,
+            new Date(),
+            isOtherMonth,
+            view,
+            undefined,
+            handleBookingClick,
+            setIsBookingModalOpen
+          );
+        })}
+      </div>
     );
   };
 
-  const Calendar: React.FC = () => {
-    const renderMonthView = () => {
-      const currentDate = new Date();
-      const year = viewDate.getFullYear();
-      const month = viewDate.getMonth();
-      const firstDay = startOfMonth(viewDate);
-      const daysInMonth = endOfMonth(viewDate).getDate();
-      const startingDay = getDay(firstDay);
-      const prevMonthDays = endOfMonth(subMonths(viewDate, 1)).getDate();
+  const renderDayView = () => {
+    const dayBookings = getBookingsForDate(viewDate, filteredBookings || []);
+    const bookingCounts = calculateBookingCounts(
+      viewDate,
+      filteredBookings || []
+    );
+    const hasBooking = hasBookings(viewDate, filteredBookings);
 
-      const days: JSX.Element[] = [];
-
-      for (let i = 0; i < startingDay; i++) {
-        const day = prevMonthDays - startingDay + i + 1;
-        const date = new Date(year, month - 1, day);
-        days.push(
-          <Day
-            key={`prev-${day}`}
-            date={date}
-            isOtherMonth={true}
-            currentDate={currentDate}
-          />
-        );
-      }
-
-      for (let i = 1; i <= daysInMonth; i++) {
-        const date = new Date(year, month, i);
-        days.push(
-          <Day
-            key={i}
-            date={date}
-            isOtherMonth={false}
-            onClick={handleDayClick}
-            currentDate={currentDate}
-          />
-        );
-      }
-
-      const totalCells = startingDay + daysInMonth;
-      const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-      for (let i = 1; i <= remainingCells; i++) {
-        const date = new Date(year, month + 1, i);
-        days.push(
-          <Day
-            key={`next-${i}`}
-            date={date}
-            isOtherMonth={true}
-            currentDate={currentDate}
-          />
-        );
-      }
-
-      return (
-        <div id="month-view">
-          <div className="grid grid-cols-7 gap-1 mb-2 sm:mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div
-                key={day}
-                className="text-center text-xs sm:text-sm font-medium text-[var(--text-primary)] py-1 sm:py-2"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-          <div className="calendar-grid grid grid-cols-7 gap-1 sm:gap-2">
-            {days}
-          </div>
+    return (
+      <div
+        className={`p-4 rounded-lg text-center cursor-pointer transition-colors duration-200 ${
+          hasBooking ? 'bg-[rgba(0, 255, 255, 0.2)]' : 'bg-transparent'
+        }`}
+      >
+        <div className="text-lg sm:text-xl font-medium">
+          {format(viewDate, 'MMMM d, yyyy')}
         </div>
-      );
-    };
-
-    const renderWeekView = () => {
-      const start = startOfWeek(viewDate, { weekStartsOn: 0 });
-      const days: JSX.Element[] = [];
-      const currentDate = new Date();
-
-      for (let i = 0; i < 7; i++) {
-        const day = addDays(start, i);
-        const dayBookings = getBookingsForDate(day, filteredBookings || []);
-        const availability = calculateAvailability(day, filteredBookings || []);
-        const percentage = Math.max(0, Math.min(100, availability.percentage));
-        const availabilityColor =
-          percentage > 70
-            ? 'bg-[var(--icon-bg-green)]'
-            : percentage > 40
-            ? 'bg-[var(--icon-bg-yellow)]'
-            : percentage > 0
-            ? 'bg-[var(--icon-bg-blue)]'
-            : 'bg-[var(--icon-bg-purple)]';
-
-        days.push(
-          <motion.div
-            key={i}
-            className="flex-1 min-w-[120px] sm:min-w-[160px] glass-card rounded-lg p-3 sm:p-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="text-center mb-2 sm:mb-3">
-              <div className="text-xs sm:text-sm text-[var(--text-secondary)]">
-                {format(day, 'EEE')}
-              </div>
-              <div className="text-sm sm:text-base font-semibold text-[var(--text-primary)]">
-                {format(day, 'MMM d')}
-              </div>
-              <div className="w-full bg-[var(--input-bg)] rounded-full h-2 sm:h-3 mt-1 sm:mt-2">
+        {dayBookings.length > 0 && (
+          <div className="flex flex-col items-center mt-2 space-y-1">
+            {dayBookings.map((booking, index) => {
+              const totalRooms = getTotalRooms(booking.roomName);
+              return (
                 <motion.div
-                  className={`${availabilityColor} h-2 sm:h-3 rounded-full`}
-                  style={{ width: `${percentage}%` }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${percentage}%` }}
-                  transition={{ duration: 0.5 }}
-                ></motion.div>
-              </div>
-              <div className="text-xs text-[var(--text-secondary)] mt-1">
-                {availability.available} of {availability.total} available
-              </div>
-            </div>
-
-            <div className="space-y-2 sm:space-y-3">
-              {dayBookings.length === 0 ? (
-                <motion.div
-                  className="p-2 sm:p-3 text-center text-xs sm:text-sm text-[var(--text-secondary)] cursor-pointer hover:text-[var(--icon-bg-blue)] glass-card rounded-lg"
-                  onClick={() =>
-                    handleDayClick(
-                      day,
-                      document.getElementById(`week-day-${i}`) ||
-                        document.createElement('div')
-                    )
-                  }
-                  whileHover={{ scale: 1.05 }}
-                  aria-label="Add booking"
-                  id={`week-day-${i}`}
-                >
-                  Click to add booking
-                </motion.div>
-              ) : (
-                dayBookings.map((booking) => (
-                  <motion.div
-                    key={booking.guestName + booking.checkIn}
-                    className={`p-2 sm:p-3 rounded-lg text-xs sm:text-sm glass-card ${getStatusTextClass(
-                      booking.status
-                    )}`}
-                    onClick={() => handleBookingClick(booking)}
-                    whileHover={{
-                      y: -2,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    }}
-                  >
-                    <div className="font-medium truncate">{booking.guestName}</div>
-                    <div className="flex justify-between mt-1">
-                      <span className="truncate">{booking.hotel}</span>
-                      <span>{booking.noOfRooms} rooms</span>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </motion.div>
-        );
-      }
-
-      return (
-        <div id="week-view">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4">
-            {days}
-          </div>
-        </div>
-      );
-    };
-
-    const renderDayView = () => {
-      const dayBookings = getBookingsForDate(viewDate, filteredBookings || []);
-      const availability = calculateAvailability(viewDate, filteredBookings || []);
-      const percentage = Math.max(0, Math.min(100, availability.percentage));
-      const availabilityColor =
-        percentage > 70
-          ? 'bg-[var(--icon-bg-green)]'
-          : percentage > 40
-          ? 'bg-[var(--icon-bg-yellow)]'
-          : percentage > 0
-          ? 'bg-[var(--icon-bg-blue)]'
-          : 'bg-[var(--icon-bg-purple)]';
-
-      return (
-        <div id="day-view" className="p-4 sm:p-6">
-          <div className="text-center mb-4 sm:mb-6">
-            <div className="text-sm sm:text-base text-[var(--text-secondary)]">
-              {format(viewDate, 'EEEE')}
-            </div>
-            <div className="text-lg sm:text-xl font-semibold text-[var(--text-primary)]">
-              {format(viewDate, 'MMMM d, yyyy')}
-            </div>
-            <div className="w-full max-w-xs mx-auto bg-[var(--input-bg)] rounded-full h-3 sm:h-4 mt-2 sm:mt-3">
-              <motion.div
-                className={`${availabilityColor} h-3 sm:h-4 rounded-full`}
-                style={{ width: `${percentage}%` }}
-                initial={{ width: 0 }}
-                animate={{ width: `${percentage}%` }}
-                transition={{ duration: 0.5 }}
-              ></motion.div>
-            </div>
-            <div className="text-xs sm:text-sm text-[var(--text-secondary)] mt-2">
-              {availability.available} of {availability.total} available
-            </div>
-          </div>
-
-          <div className="space-y-3 sm:space-y-4">
-            {dayBookings.length === 0 ? (
-              <motion.div
-                className="p-3 sm:p-4 text-center text-sm sm:text-base text-[var(--text-secondary)] cursor-pointer hover:text-[var(--icon-bg-blue)] glass-card rounded-lg"
-                onClick={() =>
-                  handleDayClick(
-                    viewDate,
-                    document.getElementById('day-view') ||
-                      document.createElement('div')
-                  )
-                }
-                whileHover={{ scale: 1.05 }}
-                aria-label="Add booking"
-              >
-                No bookings. Click to add a booking.
-              </motion.div>
-            ) : (
-              dayBookings.map((booking) => (
-                <motion.div
-                  key={booking.guestName + booking.checkIn}
-                  className={`p-3 sm:p-4 rounded-lg text-sm sm:text-base glass-card ${getStatusTextClass(
-                    booking.status
-                  )}`}
+                  key={`${booking.guestName}-${booking.checkIn}-${index}`}
+                  className="glass-card p-2 rounded-lg w-full text-left text-xs sm:text-sm"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
                   onClick={() => handleBookingClick(booking)}
-                  whileHover={{
-                    y: -2,
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  }}
                 >
-                  <div className="font-medium truncate">{booking.guestName}</div>
-                  <div className="flex justify-between mt-2">
-                    <span className="truncate">{booking.hotel}</span>
-                    <span>{booking.noOfRooms} rooms</span>
+                  <div className="font-medium">{booking.guestName}</div>
+                  <div className="text-[var(--text-secondary)]">
+                    {booking.checkIn} - {booking.checkOut}
                   </div>
+                  <div className="text-[var(--text-secondary)] mt-1">
+                    <span
+                      className={`badge badge-${(booking.status || '').toLowerCase().replace(' ', '-')}`}
+                    >
+                      {booking.status}
+                    </span>
+                  </div>
+                  {totalRooms > 0 && (
+                    <div className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+                      {totalRooms} rooms
+                    </div>
+                  )}
                   <div className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-                    Plan: {booking.plan} | PAX: {booking.pax || 'N/A'}
+                    Plan: {booking.plan || 'N/A'} | PAX: {booking.pax || 'N/A'}
                   </div>
                 </motion.div>
-              ))
+              );
+            })}
+            {bookingCounts.Confirmed > 0 && (
+              <div>Confirmed: {bookingCounts.Confirmed}</div>
+            )}
+            {bookingCounts.Cancelled > 0 && (
+              <div>Cancelled: {bookingCounts.Cancelled}</div>
+            )}
+            {bookingCounts['On Hold'] > 0 && (
+              <div>On Hold: {bookingCounts['On Hold']}</div>
             )}
           </div>
-        </div>
-      );
-    };
+        )}
+      </div>
+    );
+  };
 
+  const Calendar = () => {
     if (isLoading) {
       return <SkeletonLoader viewType={view} />;
     }
@@ -1055,7 +1006,7 @@ const CalendarView = () => {
 
             <motion.button
               onClick={() => setViewDate(new Date())}
-              className="px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm bg-[var(--input-bg)] text-[var(--text-primary)] rounded-full neumorphic-button"
+              className="px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm bg-[var(--input-bg)] text-[var(--text-primary)] rounded-full neumorphic-button hover:bg-[var(--sidebar-hover)] transition-colors duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Go to today"
@@ -1064,20 +1015,17 @@ const CalendarView = () => {
             </motion.button>
           </div>
 
-          <div className="date-picker-tabs glass-card rounded-lg p-1">
+          <div className="date-picker-tabs glass-card rounded-lg p-1 flex">
             {['month', 'week', 'day'].map((tab) => (
               <motion.button
                 key={tab}
-                className={`date-picker-tab text-xs sm:text-sm ${
+                className={`date-picker-tab text-xs sm:text-sm px-3 py-1.5 rounded-md ${
                   view === tab
-                    ? 'active bg-gradient-primary text-white'
-                    : 'text-[var(--text-primary)]'
-                }`}
+                    ? 'bg-gradient-primary text-white font-semibold'
+                    : 'text-[var(--text-primary)] hover:bg-[var(--sidebar-hover)]'
+                } transition-all duration-200`}
                 onClick={() => setView(tab as 'month' | 'week' | 'day')}
-                whileHover={{
-                  scale: 1.05,
-                  backgroundColor: 'var(--sidebar-hover)',
-                }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label={`Switch to ${tab} view`}
               >
@@ -1090,7 +1038,7 @@ const CalendarView = () => {
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-2 flex-1 max-w-[100%] sm:max-w-md">
             <motion.button
-              className="p-2 rounded-lg bg-[var(--card-bg)]"
+              className="p-2 rounded-lg bg-[var(--card-bg)] hover:bg-[var(--sidebar-hover)] transition-colors duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Search bookings"
@@ -1103,7 +1051,7 @@ const CalendarView = () => {
                 placeholder="Search by guest, hotel, or status..."
                 value={searchQuery}
                 onChange={handleSearch}
-                className="input-field w-full pl-3 sm:pl-4 pr-8 sm:pr-10 py-2 sm:py-3 rounded-lg glass-card text-xs sm:text-sm"
+                className="input-field w-full pl-3 sm:pl-4 pr-8 sm:pr-10 py-2 sm:py-3 rounded-lg glass-card text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--icon-bg-indigo)]"
                 aria-label="Search bookings"
               />
               {searchQuery && (
@@ -1121,21 +1069,21 @@ const CalendarView = () => {
           </div>
           <motion.button
             onClick={() => setIsBookingModalOpen(true)}
-            className="btn-primary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+            className="btn-primary flex items-center space-x-2 px-4 py-2 text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Add new booking"
           >
             <FiPlus size={16} />
-            <span className="hidden sm:inline">New Booking</span>
+            <span>New Booking</span>
           </motion.button>
         </div>
 
-        <div className="flex flex-wrap gap-3 sm:gap-6 mb-4 sm:mb-6">
+        <div className="flex flex-wrap gap-4 mb-6 sm:mb-8">
           {[
             { status: 'Confirmed', color: 'badge-confirmed' },
             { status: 'Hold', color: 'badge-hold' },
-            { status: 'Cancelled', color: 'badge-cancelled bg-red-500' },
+            { status: 'Cancelled', color: 'badge-cancelled' },
             { status: 'High Availability', color: 'availability-high' },
             { status: 'Medium Availability', color: 'availability-medium' },
             { status: 'Low Availability', color: 'availability-low' },
@@ -1143,11 +1091,9 @@ const CalendarView = () => {
           ].map((item) => (
             <div
               key={item.status}
-              className="flex items-center gap-2 text-xs sm:text-sm text-[var(--text-primary)]"
+              className="flex items-center gap-2 text-sm text-[var(--text-primary)]"
             >
-              <div
-                className={`w-3 sm:w-4 h-3 sm:h-4 rounded-full ${item.color}`}
-              ></div>
+              <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
               <span>{item.status}</span>
             </div>
           ))}
@@ -1174,6 +1120,446 @@ const CalendarView = () => {
         onAddBooking={() => setIsBookingModalOpen(true)}
         onBookingClick={handleBookingClick}
       />
+    </div>
+  );
+};
+
+const BookingModal = ({ isOpen, onClose, booking }: BookingModalProps) => {
+  const copyBookingDetails = () => {
+    if (!booking) return;
+    const duration =
+      booking.checkIn && booking.checkOut
+        ? differenceInDays(
+            parseISO(booking.checkOut),
+            parseISO(booking.checkIn)
+          )
+        : 0;
+
+    const roomDetails = booking.roomName || {};
+    const roomRent = booking.roomRent || {};
+    const usedRooms = Object.entries(roomDetails as { [key: string]: string })
+      .filter(([_, value]) => value && parseInt(value, 10) > 0)
+      .map(([key, value]) => ({
+        name: key.charAt(0).toUpperCase() + key.slice(1).replace(/Bed$/, ''),
+        count: value,
+        rate: roomRent[key as keyof typeof roomRent] || 0,
+      }));
+
+    const text = `Guest Details for ${booking.guestName}
+==================
+Guest Information:
+- Name: ${booking.guestName}
+- Contact: ${booking.contact || 'N/A'}
+- Hotel: ${booking.hotel}
+
+Booking Details:
+- Check-In: ${booking.checkIn}
+- Check-Out: ${booking.checkOut}
+- Duration: ${duration} days
+- PAX: ${booking.pax || 'N/A'}
+- Status: ${booking.status}
+
+Room Details:
+${usedRooms.map((r) => `${r.name}: ${r.count} (Rate: ₹${parseFloat(r.rate.toString()).toLocaleString()}${Number(booking.discount?.[r.name.toLowerCase() as keyof typeof booking.discount] || 0) > 0 ? `, Discount: ₹${(booking.discount?.[r.name.toLowerCase() as keyof typeof booking.discount] || 0).toLocaleString()}` : ''})`).join('\n')}
+
+Financial Summary:
+- Total Bill: ₹${(booking.billAmount || 0).toLocaleString()}
+- Advance Paid: ₹${(booking.advance || 0).toLocaleString()}
+- Due Amount: ₹${((booking.billAmount || 0) - (booking.advance || 0)).toLocaleString()}
+- Cash-In: ₹${(booking.cashIn || 0).toLocaleString()}
+- Cash-Out: ₹${(booking.cashOut || 0).toLocaleString()}
+- Payment Mode: ${booking.modeOfPayment || 'N/A'}
+- To Account: ${booking.toAccount || 'N/A'}
+- Scheme: ${booking.scheme || 'N/A'}
+- Date: ${booking.dateBooked || 'N/A'}
+
+Generated by: Hotel Om Shiv Shankar
+on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: true })}`;
+    navigator.clipboard.writeText(text);
+    toast.success('Booking details copied to clipboard!');
+  };
+
+  const printBookingDetails = () => {
+    if (!booking) return;
+    const doc = new jsPDF();
+    doc.setFontSize(12);
+    doc.text(`Guest Details for ${booking.guestName}`, 10, 10);
+    doc.text('==================', 10, 15);
+    doc.text('Guest Information:', 10, 20);
+    doc.text(`- Name: ${booking.guestName}`, 10, 25);
+    doc.text(`- Contact: ${booking.contact || 'N/A'}`, 10, 30);
+    doc.text(`- Hotel: ${booking.hotel}`, 10, 35);
+    doc.text('Booking Details:', 10, 40);
+    doc.text(`- Check-In: ${booking.checkIn}`, 10, 45);
+    doc.text(`- Check-Out: ${booking.checkOut}`, 10, 50);
+    doc.text(
+      `- Duration: ${differenceInDays(parseISO(booking.checkOut), parseISO(booking.checkIn))} days`,
+      10,
+      55
+    );
+    doc.text(`- PAX: ${booking.pax || 'N/A'}`, 10, 60);
+    doc.text(`- Status: ${booking.status}`, 10, 65);
+    doc.text('Room Details:', 10, 70);
+    let y = 75;
+    const roomDetails = booking.roomName || {};
+    const roomRent = booking.roomRent || {};
+    Object.entries(roomDetails).forEach(([key, value]) => {
+      if (parseInt(value?.toString() || '0', 10) > 0) {
+        const roomName =
+          key.charAt(0).toUpperCase() + key.slice(1).replace(/Bed$/, '');
+        doc.text(
+          `- ${roomName}: ${value} (Rate: ₹${parseFloat((roomRent[key as keyof typeof roomRent] || '0').toString()).toLocaleString()})`,
+          10,
+          y
+        );
+        y += 5;
+      }
+    });
+    doc.text('Financial Summary:', 10, y);
+    y += 5;
+    doc.text(
+      `- Total Bill: ₹${(booking.billAmount || 0).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(
+      `- Advance Paid: ₹${(booking.advance || 0).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(
+      `- Due Amount: ₹${((booking.billAmount || 0) - (booking.advance || 0)).toLocaleString()}`,
+      10,
+      y
+    );
+    y += 5;
+    doc.text(`- Cash-In: ₹${(booking.cashIn || 0).toLocaleString()}`, 10, y);
+    y += 5;
+    doc.text(`- Cash-Out: ₹${(booking.cashOut || 0).toLocaleString()}`, 10, y);
+    y += 5;
+    doc.text(`- Payment Mode: ${booking.modeOfPayment || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text(`- To Account: ${booking.toAccount || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text(`- Scheme: ${booking.scheme || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text(`- Date: ${booking.dateBooked || 'N/A'}`, 10, y);
+    y += 5;
+    doc.text('Generated by: Hotel Om Shiv Shankar', 10, y);
+    y += 5;
+    doc.text(
+      `on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: true })}`,
+      10,
+      y
+    );
+    doc.save(`Booking_Details_${booking.guestName}.pdf`);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="sidebar-overlay"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.7 }}
+            exit={{ opacity: 0 }}
+          />
+          <motion.div
+            className="modal rounded-2xl z-50 w-full max-w-md bg-[var(--card-bg)] border border-[var(--border-color)] shadow-lg p-6"
+            initial={{ scale: 0.9, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 50 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+                {booking ? 'Booking Details' : 'New Booking'}
+              </h3>
+              <motion.button
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                whileHover={{ scale: 1.2 }}
+                onClick={onClose}
+              >
+                <FiX size={24} />
+              </motion.button>
+            </div>
+            {booking ? (
+              <div className="space-y-4">
+                <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
+                  <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                    Guest Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <p>
+                      <strong>Name:</strong> {booking.guestName}
+                    </p>
+                    <p>
+                      <strong>Contact:</strong> {booking.contact || 'N/A'}
+                    </p>
+                    <p>
+                      <strong>Hotel:</strong> {booking.hotel}
+                    </p>
+                    <p>
+                      <strong>PAX:</strong> {booking.pax || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
+                  <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                    Booking Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <p>
+                      <strong>Plan:</strong> {booking.plan}
+                    </p>
+                    <p>
+                      <strong>Check-In:</strong> {booking.checkIn}
+                    </p>
+                    <p>
+                      <strong>Check-Out:</strong> {booking.checkOut}
+                    </p>
+                    <p>
+                      <strong>Duration:</strong>{' '}
+                      {differenceInDays(
+                        parseISO(booking.checkOut),
+                        parseISO(booking.checkIn)
+                      )}{' '}
+                      days
+                    </p>
+                    <p>
+                      <strong>Status:</strong>{' '}
+                      <span
+                        className={`badge badge-${booking.status?.toLowerCase() || 'no-show'}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
+                  <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                    Room Details
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {Number(booking.roomName?.doubleBed || 0) > 0 && (
+                      <div>
+                        <p>
+                          <strong>Double Bed:</strong>{' '}
+                          {booking.roomName.doubleBed} (Rate: ₹
+                          {parseFloat(
+                            (booking.roomRent?.doubleBed || '0').toString()
+                          ).toLocaleString()}
+                          {Number(booking.discount?.doubleBed || 0) > 0
+                            ? `, Discount: ₹${(booking.discount.doubleBed || 0).toLocaleString()}`
+                            : ''}
+                          )
+                        </p>
+                      </div>
+                    )}
+                    {Number(booking.roomName?.tripleBed || 0) > 0 && (
+                      <div>
+                        <p>
+                          <strong>Triple Bed:</strong>{' '}
+                          {booking.roomName.tripleBed} (Rate: ₹
+                          {parseFloat(
+                            (booking.roomRent?.tripleBed || '0').toString()
+                          ).toLocaleString()}
+                          {Number(booking.discount?.tripleBed || 0) > 0
+                            ? `, Discount: ₹${(booking.discount.tripleBed || 0).toLocaleString()}`
+                            : ''}
+                          )
+                        </p>
+                      </div>
+                    )}
+                    {Number(booking.roomName?.fourBed || 0) > 0 && (
+                      <div>
+                        <p>
+                          <strong>Four Bed:</strong> {booking.roomName.fourBed}{' '}
+                          (Rate: ₹
+                          {parseFloat(
+                            (booking.roomRent?.fourBed || '0').toString()
+                          ).toLocaleString()}
+                          {Number(booking.discount?.fourBed || 0) > 0
+                            ? `, Discount: ₹${(booking.discount.fourBed || 0).toLocaleString()}`
+                            : ''}
+                          )
+                        </p>
+                      </div>
+                    )}
+                    {Number(booking.roomName?.extraBed || 0) > 0 && (
+                      <div>
+                        <p>
+                          <strong>Extra Bed:</strong>{' '}
+                          {booking.roomName.extraBed} (Rate: ₹
+                          {parseFloat(
+                            (booking.roomRent?.extraBed || '0').toString()
+                          ).toLocaleString()}
+                          {Number(booking.discount?.extraBed || 0) > 0
+                            ? `, Discount: ₹${(booking.discount.extraBed || 0).toLocaleString()}`
+                            : ''}
+                          )
+                        </p>
+                      </div>
+                    )}
+                    {Number(booking.roomName?.kitchen || 0) > 0 && (
+                      <div>
+                        <p>
+                          <strong>Kitchen:</strong> {booking.roomName.kitchen}{' '}
+                          (Rate: ₹
+                          {parseFloat(
+                            (booking.roomRent?.kitchen || '0').toString()
+                          ).toLocaleString()}
+                          {Number(booking.discount?.kitchen || 0) > 0
+                            ? `, Discount: ₹${(booking.discount.kitchen || 0).toLocaleString()}`
+                            : ''}
+                          )
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
+                  <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                    Financial Summary
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <p>
+                      <strong>Total Bill:</strong>{' '}
+                      <span className="text-blue-400 font-semibold">
+                        ₹{booking.billAmount?.toLocaleString() || '0'}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Advance Paid:</strong>{' '}
+                      <span className="text-emerald-400 font-semibold">
+                        ₹{booking.advance?.toLocaleString() || '0'}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Due Amount:</strong>{' '}
+                      <span className="text-rose-400 font-semibold">
+                        ₹
+                        {(
+                          booking.due ||
+                          (booking.billAmount || 0) - (booking.advance || 0)
+                        ).toLocaleString()}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Cash-In:</strong>{' '}
+                      <span className="text-teal-400">
+                        ₹{booking.cashIn?.toLocaleString() || '0'}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Cash-Out:</strong>{' '}
+                      <span className="text-orange-400">
+                        ₹{booking.cashOut?.toLocaleString() || '0'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
+                  <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                    Payment Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <p>
+                      <strong>Mode:</strong> {booking.modeOfPayment}
+                    </p>
+                    <p>
+                      <strong>To Account:</strong> {booking.toAccount || 'N/A'}
+                    </p>
+                    <p>
+                      <strong>Date:</strong> {booking.dateBooked || 'N/A'}
+                    </p>
+                    <p>
+                      <strong>Scheme:</strong> {booking.scheme || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 mt-4">
+                  <motion.button
+                    onClick={copyBookingDetails}
+                    className="btn-primary flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-glow hover:shadow-xl transition-all duration-200"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    aria-label="Copy booking details"
+                  >
+                    <FiCopy size={16} /> Copy Details
+                  </motion.button>
+                  <motion.button
+                    onClick={printBookingDetails}
+                    className="btn-primary flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-glow hover:shadow-xl transition-all duration-200"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    aria-label="Download booking PDF"
+                  >
+                    <FiDownload size={16} /> Download PDF
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              <BookingForm onBookingSuccess={() => { onClose(); }} />
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const SkeletonLoader = ({
+  viewType,
+}: {
+  viewType: 'month' | 'week' | 'day';
+}) => {
+  return (
+    <div className="animate-pulse space-y-4">
+      {viewType === 'month' && (
+        <>
+          <div className="h-10 rounded-lg w-3/4 mx-auto bg-[var(--card-bg)]"></div>
+          <div className="grid grid-cols-7 gap-2">
+            {[...Array(7)].map((_, i) => (
+              <div
+                key={i}
+                className="h-6 rounded w-full bg-[var(--card-bg)]"
+              ></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {[...Array(35)].map((_, i) => (
+              <div
+                key={i}
+                className="h-20 rounded-lg w-full bg-[var(--card-bg)]"
+              ></div>
+            ))}
+          </div>
+        </>
+      )}
+      {viewType === 'week' && (
+        <div className="grid grid-cols-1 sm:grid-cols-7 gap-4 p-4 bg-[var(--card-bg)]/50 rounded-xl border border-[var(--border-color)]">
+          {[...Array(7)].map((_, i) => (
+            <div
+              key={i}
+              className="h-24 rounded-xl w-full bg-[var(--card-bg)]"
+            ></div>
+          ))}
+        </div>
+      )}
+      {viewType === 'day' && (
+        <div className="h-64 rounded-lg w-full bg-[var(--card-bg)]"></div>
+      )}
     </div>
   );
 };

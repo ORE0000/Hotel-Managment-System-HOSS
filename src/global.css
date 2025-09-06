@@ -24,7 +24,7 @@
   --icon-bg-blue: #3b82f6;
   --icon-bg-yellow: #f59e0b;
   --icon-bg-purple: #9333ea;
-  --icon-bg-orange: #f97316;
+  --icon-bg-orange: #f97416;
   --icon-bg-teal: #14b8a6;
   --icon-bg-pink: #ec4899;
   --icon-bg-red: #ef4444;
@@ -38,13 +38,13 @@
   --tab-text: #f8fafc;
   --modal-bg: rgba(15, 23, 42, 0.9);
   --modal-border: rgba(255, 255, 255, 0.2);
-  --event-confirmed-bg: #4f46e5;
-  --event-confirmed-border: #4338ca;
+  --event-confirmed-bg: #10b981; /* Updated to green to match screenshot */
+  --event-confirmed-border: #0f766e;
   --event-pending-bg: #f59e0b;
   --event-pending-border: #d97706;
   --event-cancelled-bg: #ef4444;
   --event-cancelled-border: #dc2626;
-  --event-hold-bg: #eab308;
+  --event-hold-bg: #fbbf24;
   --event-hold-border: #ca8a04;
   --event-waitlist-bg: #9333ea;
   --event-waitlist-border: #7e22ce;
@@ -89,14 +89,14 @@
   --tab-text: #0f172a;
   --modal-bg: rgba(255, 255, 255, 0.98);
   --modal-border: rgba(0, 0, 0, 0.15);
-  --event-confirmed-bg: #6366f1;
-  --event-confirmed-border: #4f46e5;
-  --event-pending-bg: #fbbf24;
+  --event-confirmed-bg: #38E54D; /* Updated to green to match screenshot */
+  --event-confirmed-border: #38E54D;
+  --event-pending-bg: #f59e0b;
   --event-pending-border: #f59e0b;
-  --event-cancelled-bg: #f87171;
-  --event-cancelled-border: #ef4444;
-  --event-hold-bg: #facc15;
-  --event-hold-border: #eab308;
+  --event-cancelled-bg: #FF0000;
+  --event-cancelled-border: #FF0000;
+  --event-hold-bg: #FBF46D;
+  --event-hold-border: #FCEF91;
   --event-waitlist-bg: #a855f7;
   --event-waitlist-border: #9333ea;
   --event-no-show-bg: #9ca3af;
@@ -1190,13 +1190,13 @@ body {
 
 /* Tooltip */
 .tooltip {
-  background: var(--modal-bg);
+  background: var(--card-bg); /* Using card-bg for better contrast */
   backdrop-filter: blur(12px);
   border: 1px solid var(--modal-border);
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  color: var(--text-primary);
+  color: var(--text-primary); /* Ensure text is visible against card-bg */
   font-size: 0.9em;
   max-width: 300px;
   z-index: 1000;
@@ -1210,6 +1210,17 @@ body {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+[data-theme="light"] .tooltip {
+  background: rgba(255, 255, 255, 0.95); /* Lighter background in light mode */
+  color: #0f172a; /* Darker text in light mode for contrast */
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .tooltip {
+  background: rgba(15, 23, 42, 0.95); /* Slightly adjusted dark background */
+  color: #f8fafc; /* Ensure white text for dark mode */
 }
 
 /* FullCalendar Styles */

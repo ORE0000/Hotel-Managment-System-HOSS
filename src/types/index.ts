@@ -61,11 +61,11 @@ export interface BookingDetail {
   noOfRooms?: number | string;
   extraBed?: number | string;
   kitchen?: string;
-  advance: number;
+  advance?: number;
   search?: string;
-  db?: number ;
-  tb?: number ;
-  fb?: number ;
+  db?: number;
+  tb?: number;
+  fb?: number;
   extra?: number;
 }
 
@@ -99,7 +99,7 @@ export interface ExtendedBookingDetail {
     extraBed: number;
     kitchen: number;
   };
-  billAmount?: number;
+  billAmount: number;
   advance: number;
   due: number;
   cashIn: number;
@@ -197,7 +197,7 @@ export interface BillData {
   extraBedRoom: number;
   kitchenRoom: number;
   roomNumber: string;
-  ratePerGuest:number,
+  ratePerGuest: number;
   doubleBedRate: number;
   tripleBedRate: number;
   fourBedRate: number;

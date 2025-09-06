@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { BookingDetail } from '../types';
+import { BookingDetail, ExtendedBookingDetail } from '../types';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 
@@ -93,13 +93,32 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ viewMode, searchQ
 
   // Handle event click to show booking details
   const handleEventClick = ({ event }: any) => {
-    const booking = event.extendedProps;
+    const booking = event.extendedProps as BookingDetail & Partial<ExtendedBookingDetail>;
+    let roomsDisplay: string | number = 'N/A';
+    let label = 'Rooms';
+    
+    if (booking.roomName) {
+      const doubleBed = Number(booking.roomName.doubleBed || 0);
+      const tripleBed = Number(booking.roomName.tripleBed || 0);
+      const fourBed = Number(booking.roomName.fourBed || 0);
+      const totalRooms = doubleBed + tripleBed + fourBed;
+      
+      if (totalRooms > 0) {
+        roomsDisplay = totalRooms;
+      } else {
+        roomsDisplay = booking.roomName.extraBed ? Number(booking.roomName.extraBed) : 'N/A';
+        label = 'Extra Bed';
+      }
+    } else {
+      roomsDisplay = booking.noOfRooms || 'N/A';
+    }
+    
     toast.info(
       <div className="space-y-1">
-        <h4 className="font-semibold text-[var(--text-primary)]">Booking Details</h4>
+        <h4 className="font-bold">Booking Details </h4>
         <p><strong>Guest:</strong> {booking.guestName}</p>
         <p><strong>Plan:</strong> {booking.plan}</p>
-        <p><strong>Rooms:</strong> {booking.noOfRooms || 'N/A'}</p>
+        <p><strong>{label}:</strong> {roomsDisplay}</p>
         <p><strong>Status:</strong> {booking.status}</p>
         <p><strong>Check-in:</strong> {format(new Date(booking.checkIn), 'PPP')}</p>
         <p><strong>Check-out:</strong> {format(new Date(booking.checkOut), 'PPP')}</p>
@@ -170,6 +189,9 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({ viewMode, searchQ
                   <div class="text-sm">Check-in: ${format(new Date(info.event.start!), 'PPP')}</div>
                   <div class="text-sm">Check-out: ${format(new Date(info.event.end!), 'PPP')}</div>
                 `;
+                // Set tooltip text color based on theme
+                const isLightTheme = document.documentElement.dataset.theme === 'light';
+                tooltip.style.color = isLightTheme ? '#0f172a' : '#f8fafc';
                 info.el.setAttribute('data-tooltip', '');
                 const showTooltip = (e: Event) => {
                   tooltip.classList.add('visible');

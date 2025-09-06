@@ -80,7 +80,7 @@ const RoomList = () => {
         ],
       },
       {
-        name: '1st FLOOR',
+        name: '1st FLOOR (0TH FLOOR )',
         rooms: [
           { roomNumber: '201', beds: 3, extraBeds: 0, totalBeds: 3 },
           { roomNumber: '202', beds: 3, extraBeds: 0, totalBeds: 3 },
@@ -93,7 +93,7 @@ const RoomList = () => {
         ],
       },
       {
-        name: '2nd FLOOR',
+        name: '2nd FLOOR (1 FLOOR UP)',
         rooms: [
           { roomNumber: '301', beds: 2, extraBeds: 0, totalBeds: 2 },
           { roomNumber: '302', beds: 2, extraBeds: 0, totalBeds: 2 },

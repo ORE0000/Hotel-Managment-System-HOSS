@@ -121,6 +121,7 @@ type FormData = z.infer<typeof bookingSchema>;
 
 interface BookingFormProps {
   onBookingSuccess: () => void;
+  
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({ onBookingSuccess }) => {
@@ -562,7 +563,7 @@ Due Amount: ₹${calculated.due}
       >
         <h2 className="text-2xl md:text-3xl font-bold text-gradient flex items-center gap-2">
           <FiEdit size={28} className="text-indigo-500" />
-          Booking Details
+          Add Booking Details
         </h2>
         <div className="mt-2 h-1 w-32 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
         <p className="text-sm text-[var(--text-secondary)] mt-1">

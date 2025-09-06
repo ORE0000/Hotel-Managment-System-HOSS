@@ -79,7 +79,7 @@ export const fetchBookingDetails = async (startDate: string, endDate?: string): 
   if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     throw new Error("Valid startDate parameter is required in YYYY-MM-DD format");
   }
-  if (endDate && !/^\d{4}-\d{2}-\d{endDate}/.test(endDate)) {
+  if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
     throw new Error("endDate must be in YYYY-MM-DD format if provided");
   }
   try {
