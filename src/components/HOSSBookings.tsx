@@ -475,74 +475,117 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
     toast.success('JSON downloaded successfully');
   };
 
-  const downloadPDF = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
-    if (data.length === 0) {
-      toast.warn('No data available to download');
-      return;
-    }
+const downloadPDF = async () => {
+  const data = selectedRows.size > 0
+    ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx))
+    : filteredData;
+  if (data.length === 0) {
+    toast.warn('No data available to download');
+    return;
+  }
 
+  try {
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
-    data.forEach((booking, index) => {
+    const indices = selectedRows.size > 0
+      ? Array.from(selectedRows)
+      : filteredData.map((_, idx) => idx);
+
+    for (let i = 0; i < indices.length; i++) {
+      const originalIndex = indices[i];
+      const booking = data[i];
       const element = document.createElement('div');
-      element.id = `pdf-hoss-preview-${index}`;
+      element.id = `hoss-preview-${originalIndex}`;
       element.style.display = 'block';
       element.style.visibility = 'visible';
       element.style.position = 'fixed';
       element.style.top = '0';
       element.style.left = '0';
-      element.style.width = '756px';
+      element.style.width = '794px'; // A4 portrait width (210mm * ~3.78px/mm)
       element.style.height = 'auto';
       element.style.zIndex = '9999';
 
       const container = document.querySelector('.pdf-preview-container');
-      if (container) {
-        container.appendChild(element);
-        const root = createRoot(element);
-        root.render(<HOSSPreview bookingData={booking} />);
+      if (!container) {
+        toast.error('PDF preview container not found');
+        continue;
+      }
+      container.setAttribute('style', 'display: block; position: fixed; top: 0; left: 0; z-index: 9999; width: 794px;');
+      container.appendChild(element);
+      const root = createRoot(element);
+      root.render(<HOSSPreview bookingData={booking} />);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      console.log(`Element dimensions for hoss-preview-${originalIndex} before html2canvas:`, {
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        scrollWidth: element.scrollWidth,
+        scrollHeight: element.scrollHeight,
+      });
+
+      const naturalHeight = element.scrollHeight;
+      const canvas = await html2canvas(element, {
+        scale: 1,
+        useCORS: true,
+        logging: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: naturalHeight,
+        windowWidth: 794,
+      });
+
+      if (canvas.width === 0 || canvas.height === 0) {
+        console.warn(`Canvas for booking ${originalIndex} is empty`);
+        continue;
       }
 
-      setTimeout(() => {
-        html2canvas(element, {
-          scale: 1,
-          useCORS: true,
-          logging: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          width: 756,
-        }).then((canvas) => {
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const imgWidth = 210;
-          const pageHeight = 297;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          let heightLeft = imgHeight;
-          let position = 0;
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgWidth = 210; // A4 portrait width in mm
+      const pageHeight = 297; // A4 portrait height in mm
+      const margin = 5;
+      const contentWidth = imgWidth - 2 * margin;
+      const contentHeight = pageHeight - 2 * margin;
 
-          if (index > 0) pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+      const aspectRatio = canvas.width / canvas.height;
+      let scaledWidth = contentWidth;
+      let scaledHeight = scaledWidth / aspectRatio;
 
-          while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-          }
+      if (scaledHeight > contentHeight) {
+        scaledHeight = contentHeight;
+        scaledWidth = scaledHeight * aspectRatio;
+      }
 
-          if (container) container.removeChild(element);
-          if (index === data.length - 1) {
-            pdf.save(`hoss_bookings_${new Date().toISOString()}.pdf`);
-            toast.success('PDF downloaded successfully');
-          }
-        });
-      }, 1000);
-    });
-  };
+      const xOffset = (imgWidth - scaledWidth) / 2;
+      const yOffset = (pageHeight - scaledHeight) / 2;
+
+      if (i > 0) {
+        pdf.addPage();
+      }
+
+      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, scaledWidth, scaledHeight);
+
+      pdf.setLineWidth(0.5);
+      pdf.setDrawColor(150, 150, 150);
+      pdf.rect(margin, margin, contentWidth, contentHeight);
+
+      root.unmount();
+      container.removeChild(element);
+      container.setAttribute('style', 'display: none; position: fixed; top: 0; left: 0;');
+    }
+
+    pdf.save(`hoss_bookings_${new Date().toISOString()}.pdf`);
+    toast.success('PDF downloaded successfully');
+  } catch (error) {
+    console.error('Multiple bookings PDF generation error:', error);
+    toast.error('Failed to generate PDF');
+  }
+};
 
   const downloadSummaryCSV = () => {
     const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
@@ -628,13 +671,16 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
     toast.success('Summary JSON downloaded successfully');
   };
 
-  const downloadSummaryPDF = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
-    if (data.length === 0) {
-      toast.warn('No data available to download');
-      return;
-    }
+const downloadSummaryPDF = async () => {
+  const data = selectedRows.size > 0
+    ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx))
+    : filteredData;
+  if (data.length === 0) {
+    toast.warn('No data available to download');
+    return;
+  }
 
+  try {
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
@@ -642,6 +688,7 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
     });
 
     const totalPages = Math.ceil(data.length / itemsPerPagePDF);
+
     for (let page = 0; page < totalPages; page++) {
       const start = page * itemsPerPagePDF;
       const end = Math.min(start + itemsPerPagePDF, data.length);
@@ -649,57 +696,93 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
 
       const element = document.createElement('div');
       element.id = `pdf-hoss-summary-preview-page-${page}`;
-      element.style.display = 'block';
-      element.style.visibility = 'visible';
-      element.style.position = 'fixed';
-      element.style.top = '0';
-      element.style.left = '0';
-      element.style.width = '1122px';
-      element.style.zIndex = '9999';
+      element.className = 'summary-preview';
+      element.style.width = '1122px'; // A4 landscape width (297mm * ~3.78px/mm)
+      element.style.minHeight = '794px'; // A4 landscape height (210mm * ~3.78px/mm)
+      element.style.boxSizing = 'border-box';
+      element.style.backgroundColor = '#ffffff';
 
       const container = document.querySelector('.summary-preview-container');
-      if (container) {
-        container.appendChild(element);
-        const root = createRoot(element);
-        root.render(<HOSSSummaryPreview bookingData={pageData} />);
+      if (!container) {
+        throw new Error('Summary preview container not found');
       }
 
-      setTimeout(() => {
-        html2canvas(element, {
-          scale: 1,
-          useCORS: true,
-          logging: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          width: 1122,
-        }).then((canvas) => {
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const imgWidth = 297;
-          const pageHeight = 210;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          let heightLeft = imgHeight;
-          let position = 0;
+      container.appendChild(element);
+      container.setAttribute('style', 'display: block; position: fixed; top: 0; left: 0; z-index: 9999; width: 1122px;');
 
-          if (page > 0) pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+      const root = createRoot(element);
+      root.render(<HOSSSummaryPreview bookingData={pageData} />);
 
-          while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-          }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-          if (container) container.removeChild(element);
-          if (page === totalPages - 1) {
-            pdf.save(`hoss_summary_${new Date().toISOString()}.pdf`);
-            toast.success('Summary PDF downloaded successfully');
-          }
-        });
-      }, 1000);
+      console.log(`Element dimensions for pdf-hoss-summary-preview-page-${page} before html2canvas:`, {
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        scrollWidth: element.scrollWidth,
+        scrollHeight: element.scrollHeight,
+      });
+
+      const naturalHeight = element.scrollHeight;
+      const canvas = await html2canvas(element, {
+        scale: 1,
+        useCORS: true,
+        logging: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 1122,
+        height: naturalHeight,
+        windowWidth: 1122,
+      });
+
+      if (canvas.width === 0 || canvas.height === 0) {
+        throw new Error('Canvas is empty');
+      }
+
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgWidth = 297; // A4 landscape width in mm
+      const pageHeight = 210; // A4 landscape height in mm
+      const margin = 5;
+      const contentWidth = imgWidth - 2 * margin;
+      const contentHeight = pageHeight - 2 * margin;
+
+      const aspectRatio = canvas.width / canvas.height;
+      let scaledWidth = contentWidth;
+      let scaledHeight = scaledWidth / aspectRatio;
+
+      if (scaledHeight > contentHeight) {
+        scaledHeight = contentHeight;
+        scaledWidth = scaledHeight * aspectRatio;
+      }
+
+      const xOffset = (imgWidth - scaledWidth) / 2;
+      const yOffset = (pageHeight - scaledHeight) / 2;
+
+      if (page > 0) {
+        pdf.addPage();
+      }
+
+      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, scaledWidth, scaledHeight);
+
+      pdf.setLineWidth(0.5);
+      pdf.setDrawColor(150, 150, 150);
+      pdf.rect(margin, margin, contentWidth, contentHeight);
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`Page ${page + 1} of ${totalPages}`, imgWidth - 20, pageHeight - 10, { align: 'right' });
+
+      root.unmount();
+      container.removeChild(element);
+      container.setAttribute('style', 'display: none; position: fixed; top: 0; left: 0;');
     }
-  };
+
+    pdf.save(`hoss_summary_${new Date().toISOString()}.pdf`);
+    toast.success('Summary PDF downloaded successfully');
+  } catch (error) {
+    console.error('Summary PDF generation error:', error);
+    toast.error('Failed to generate summary PDF');
+  }
+};
 
   const filteredData = useMemo(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) return [];

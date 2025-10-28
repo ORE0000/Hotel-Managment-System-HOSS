@@ -1330,7 +1330,7 @@ Due Amount: ₹${calculated.due}
             onClick={handleRefresh}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-[var(--icon-bg-teal)] text-[var(--text-primary)] rounded-xl neumorphic-card font-semibold hover:bg-gradient-to-r hover:from-[var(--icon-bg-teal)] hover:to-[var(--icon-bg-blue)] hover:shadow-[0_0_10px_var(--glow-color)] transition-all duration-300"
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95, rotate: 360 }}
+            whileTap={{ scale: 0.95 }}
             transition={{ rotate: { duration: 0.5 } }}
           >
             <motion.span

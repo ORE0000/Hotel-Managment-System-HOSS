@@ -1,53 +1,122 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiCalendar, FiDollarSign, FiPieChart, FiFilter, FiHelpCircle, FiMenu } from 'react-icons/fi';
+import {
+  FiHome,
+  FiCalendar,
+  FiDollarSign,
+  FiPieChart,
+  FiFilter,
+  FiHelpCircle,
+  FiMenu,
+} from 'react-icons/fi';
 import { FaHotel } from 'react-icons/fa';
 import { SiHive } from 'react-icons/si';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
 
 interface SidebarMobileProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
 }
 
-const SidebarMobile: React.FC<SidebarMobileProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
+const SidebarMobile: React.FC<SidebarMobileProps> = ({
+  isSidebarOpen,
+  setIsSidebarOpen,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Close sidebar when route changes on mobile (only for cleanup)
-  useEffect(() => {
-    return () => {
-      setIsSidebarOpen(false);
-    };
-  }, [location.pathname, setIsSidebarOpen]);
-
   const tabs = [
-    { tab: 'dashboard', icon: <FiHome size={24} />, label: 'Dashboard', path: '/' },
-    { tab: 'booking', icon: <FiCalendar size={24} />, label: 'New Booking', path: '/booking' },
-    { tab: 'calendar', icon: <FiCalendar size={24} />, label: 'Calendar View', path: '/calendar' },
-    { tab: 'details', icon: <FiHelpCircle size={24} />, label: 'Booking Details', path: '/details' },
-    { tab: 'filter', icon: <FiFilter size={24} />, label: 'Filter Details', path: '/filter' },
-    { tab: 'enquiry', icon: <FiHelpCircle size={24} />, label: 'Enquiry', path: '/enquiry' },
-    { tab: 'hoss', icon: <SiHive size={24} />, label: 'HOSS', path: '/hoss-bookings' },
-    { tab: 'bookingAdvance', icon: <FiCalendar size={24} />, label: 'Booking Advance', path: '/booking-advance' },
-    { tab: 'otherHotels', icon: <FaHotel size={24} />, label: 'Other Hotels', path: '/other-hotels' },
-    { tab: 'financial', icon: <FiPieChart size={24} />, label: 'Financial Summary', path: '/financial' },
-    { tab: 'rates', icon: <FiDollarSign size={24} />, label: 'Rates', path: '/rates' },
-    { tab: 'billing', icon: <FiDollarSign size={24} />, label: 'Billing', path: '/billing' },
-    { tab: 'roomList', icon: <FaHotel size={24} />, label: 'Room List', path: '/room-list' },
+    {
+      tab: 'dashboard',
+      icon: <FiHome size={24} />,
+      label: 'Dashboard',
+      path: '/',
+    },
+    {
+      tab: 'booking',
+      icon: <FiCalendar size={24} />,
+      label: 'New Booking',
+      path: '/booking',
+    },
+    {
+      tab: 'calendar',
+      icon: <FiCalendar size={24} />,
+      label: 'Calendar View',
+      path: '/calendar',
+    },
+    {
+      tab: 'details',
+      icon: <FiHelpCircle size={24} />,
+      label: 'Booking Details',
+      path: '/details',
+    },
+    {
+      tab: 'filter',
+      icon: <FiFilter size={24} />,
+      label: 'Filter Details',
+      path: '/filter',
+    },
+    {
+      tab: 'enquiry',
+      icon: <FiHelpCircle size={24} />,
+      label: 'Enquiry',
+      path: '/enquiry',
+    },
+    {
+      tab: 'hoss',
+      icon: <SiHive size={24} />,
+      label: 'HOSS',
+      path: '/hoss-bookings',
+    },
+    {
+      tab: 'bookingAdvance',
+      icon: <FiCalendar size={24} />,
+      label: 'Booking Advance',
+      path: '/booking-advance',
+    },
+    {
+      tab: 'otherHotels',
+      icon: <FaHotel size={24} />,
+      label: 'Other Hotels',
+      path: '/other-hotels',
+    },
+    {
+      tab: 'financial',
+      icon: <FiPieChart size={24} />,
+      label: 'Financial Summary',
+      path: '/financial',
+    },
+    {
+      tab: 'rates',
+      icon: <FiDollarSign size={24} />,
+      label: 'Rates',
+      path: '/rates',
+    },
+    {
+      tab: 'billing',
+      icon: <FiDollarSign size={24} />,
+      label: 'Billing',
+      path: '/billing',
+    },
+    {
+      tab: 'roomList',
+      icon: <FaHotel size={24} />,
+      label: 'Room List',
+      path: '/room-list',
+    },
   ];
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    setIsSidebarOpen(false); // Close sidebar after navigation
+    setTimeout(() => {
+      setIsSidebarOpen(false);
+    }, 100);
   };
-
   return (
     <AnimatePresence>
       {isSidebarOpen && (
         <motion.div
           key="sidebar-mobile"
-          className="sidebar-desktop md:hidden fixed top-0 left-0 h-full w-[280px] bg-[var(--sidebar-bg)] rounded-l-2xl rounded-tr-2xl z-50 overflow-x-hidden scrollbar-thin"
+          className="sidebar-mobile desktop-style md:hidden fixed top-0 left-0 h-full w-[280px] bg-[var(--sidebar-bg)] rounded-l-2xl rounded-tr-2xl z-50 overflow-x-hidden scrollbar-thin"
           initial={{ x: '-100%' }}
           animate={{ x: 0 }}
           exit={{ x: '-100%' }}
@@ -97,16 +166,19 @@ const SidebarMobile: React.FC<SidebarMobileProps> = ({ isSidebarOpen, setIsSideb
                     </span>
                     <span
                       className={`font-medium text-sm ml-2 ${
-                        ['financial', 'bookingAdvance', 'calendar', 'details'].includes(item.tab)
+                        [
+                          'financial',
+                          'bookingAdvance',
+                          'calendar',
+                          'details',
+                        ].includes(item.tab)
                           ? 'whitespace-nowrap'
                           : ''
                       }`}
                     >
                       {item.label}
                     </span>
-                    <span
-                      className="absolute left-0 top-0 w-1 h-full bg-[var(--button-bg)] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"
-                    />
+                    <span className="absolute left-0 top-0 w-1 h-full bg-[var(--button-bg)] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
                   </motion.button>
                 ))}
               </div>
@@ -116,13 +188,17 @@ const SidebarMobile: React.FC<SidebarMobileProps> = ({ isSidebarOpen, setIsSideb
             <div className="p-4 overflow-x-hidden">
               <div className="flex flex-col items-center text-center">
                 <motion.button
-                  onClick={() => window.open('https://hotelomshivshankar.com/', '_blank')}
+                  onClick={() =>
+                    window.open('https://hotelomshivshankar.com/', '_blank')
+                  }
                   className="group flex items-center justify-center w-full p-3 rounded-lg text-[var(--text-primary)] hover:bg-[var(--sidebar-hover)] transition-all duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <FaHotel size={16} />
-                  <span className="font-medium text-sm truncate ml-2">HOTEL OM SHIV SHANKAR</span>
+                  <span className="font-medium text-sm truncate ml-2">
+                    HOTEL OM SHIV SHANKAR
+                  </span>
                 </motion.button>
                 <div className="text-[var(--text-secondary)] text-xs mt-2">
                   Management System v2.0

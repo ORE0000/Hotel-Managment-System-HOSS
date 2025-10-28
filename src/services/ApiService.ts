@@ -162,3 +162,51 @@ export const fetchHOSSBookings = async (filters: {
     throw new Error(getErrorMessage(error));
   }
 };
+
+
+
+// ======================================================
+// 🆕 ADD THESE TWO NEW API CALLS for Edit + Drawer
+// ======================================================
+
+// 1️⃣ Fetch booking details for drawer (view/edit mode)
+export const getBookingDrawer = async (bookingData: {
+  guestName: string;
+  hotelName: string;
+  checkIn: string;
+  sheetName?: string;
+}) => {
+  try {
+    const response = await axios.post("/api", {
+      action: "getBookingDrawer",
+      ...bookingData,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error in getBookingDrawer:", error);
+    throw error;
+  }
+};
+
+// 2️⃣ Update booking details (edit form save)
+export const updateBooking = async (updateData: {
+  guestName: string;
+  hotelName: string;
+  checkIn: string;
+  plan?: string;
+  advance?: string | number;
+  paymentMethod?: string;
+  status?: string;
+  sheetName?: string; // Optional — defaults to ENQRY if not given
+}) => {
+  try {
+    const response = await axios.post("/api", {
+      action: "updateBooking",
+      ...updateData,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error in updateBooking:", error);
+    throw error;
+  }
+};
