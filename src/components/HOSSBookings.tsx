@@ -37,6 +37,7 @@ import HOSSPreview from './PdfPreview/HOSSPreview';
 import HOSSSummaryPreview from './PdfPreview/HOSSSummaryPreview';
 import './BillingSystem/Billing.css';
 import './PdfPreview/Summary.css';
+import { DrawerEdit } from './DrawerEdit';
 
 Modal.setAppElement('#root');
 
@@ -65,6 +66,9 @@ const HOSSBookings: React.FC = () => {
   const [showSummaryDropdown, setShowSummaryDropdown] = useState(false);
   const itemsPerPage = 10;
   const itemsPerPagePDF = 4;
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<any>(null);
 
   const {
     data: hossBookings,

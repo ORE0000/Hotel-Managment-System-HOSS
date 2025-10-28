@@ -166,27 +166,29 @@ export const fetchHOSSBookings = async (filters: {
 
 
 // ======================================================
-// 🆕 ADD THESE TWO NEW API CALLS for Edit + Drawer
+// 🆕 FIXED: Drawer + Edit API Calls (use VITE_API_URL)
 // ======================================================
 
 // 1️⃣ Fetch booking details for drawer (view/edit mode)
-export const getBookingDrawer = async (bookingData: {
-  guestName: string;
-  hotelName: string;
-  checkIn: string;
-  sheetName?: string;
-}) => {
+export async function getBookingDrawer(params: any) {
+  const url = `${WEB_APP_URL}?action=getBookingDrawer&guestName=${encodeURIComponent(params.guestName)}&hotelName=${encodeURIComponent(params.hotelName)}&checkIn=${encodeURIComponent(params.checkIn)}&sheetName=${encodeURIComponent(params.sheetName)}`;
+
   try {
-    const response = await axios.post("/api", {
-      action: "getBookingDrawer",
-      ...bookingData,
-    });
+    console.log("[API] GET URL:", url);
+    const response = await axios.get(url);
+
+    // 🛑 Safety net for HTML errors
+    if (typeof response.data === "string" && response.data.trim().startsWith("<")) {
+      console.error("[API] Received HTML instead of JSON", response.data.slice(0, 100));
+      throw new Error("Server returned invalid JSON response (HTML error). Check backend URL or proxy.");
+    }
+
     return response.data;
-  } catch (error) {
-    console.error("❌ Error in getBookingDrawer:", error);
-    throw error;
+  } catch (err: any) {
+    console.error("[API] getBookingDrawer ERROR:", err);
+    throw err;
   }
-};
+}
 
 // 2️⃣ Update booking details (edit form save)
 export const updateBooking = async (updateData: {
@@ -200,10 +202,17 @@ export const updateBooking = async (updateData: {
   sheetName?: string; // Optional — defaults to ENQRY if not given
 }) => {
   try {
-    const response = await axios.post("/api", {
+    const response = await axios.post(WEB_APP_URL, {
       action: "updateBooking",
       ...updateData,
     });
+
+    // 🛑 Safety net for HTML errors
+    if (typeof response.data === "string" && response.data.trim().startsWith("<")) {
+      console.error("[API] Received HTML instead of JSON", response.data.slice(0, 100));
+      throw new Error("Server returned invalid JSON response (HTML error). Check backend URL or proxy.");
+    }
+
     return response.data;
   } catch (error) {
     console.error("❌ Error in updateBooking:", error);

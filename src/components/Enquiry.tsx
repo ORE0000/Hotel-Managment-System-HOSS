@@ -37,6 +37,7 @@ import EnquirySummaryPreview from './PdfPreview/EnquirySummaryPreview';
 import { createRoot } from 'react-dom/client';
 import './BillingSystem/Billing.css';
 import './PdfPreview/Summary.css';
+import DrawerEdit from './DrawerEdit/DrawerEdit';
 
 Modal.setAppElement('#root');
 
@@ -64,6 +65,21 @@ const EnquiryPage: React.FC = () => {
   const [showSummaryDropdown, setShowSummaryDropdown] = useState(false);
   const itemsPerPage = 10;
   const itemsPerPagePDF = 4;
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<any>(null);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // <<< ADD THESE LOGS >>>
+  useEffect(() => {
+    console.log('%c[Drawer] drawerOpen =', 'color: cyan', drawerOpen);
+    console.log(
+      '%c[Drawer] selectedBookingId =',
+      'color: yellow',
+      selectedBookingId
+    );
+  }, [drawerOpen, selectedBookingId]);
+  // ──────────────────────────────────────────────────────────────────────
 
   const {
     data: enquiries,
@@ -1478,16 +1494,34 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                             className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            aria-label={`View details for ${item.guestName}`}
+                            aria-label="View enquiry"
                           >
-                            <EyeIcon className="w-4 h-4" /> View
+                            <EyeIcon className="w-5 h-5 text-[var(--icon-bg-blue)]" />{' '}
+                            View
                           </motion.button>
                           <motion.button
-                            onClick={() => handleEdit(item)}
-                            className="btn-secondary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
+                            onClick={() => {
+                              const cleanHotel = item.hotel
+                                .split('/')[0]
+                                .trim();
+                              console.log(
+                                '%c[Edit Click] Opening drawer',
+                                'color: purple',
+                                { item, cleanHotel }
+                              );
+
+                              setSelectedBookingId({
+                                guestName: item.guestName,
+                                hotelName: cleanHotel,
+                                checkIn: item.checkIn,
+                                sheetName: 'ENQRY',
+                              });
+                              setDrawerOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-[var(--hover-bg)] hover:bg-[var(--card-bg)] transition"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            aria-label={`Edit details for ${item.guestName}`}
+                            aria-label={`Edit ${item.guestName}`}
                           >
                             <PencilIcon className="w-4 h-4" /> Edit
                           </motion.button>
@@ -1638,7 +1672,7 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                         className="text-[var(--icon-bg-blue)] hover:text-blue-800"
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.9 }}
-                        aria-label={`View details for ${item.guestName}`}
+                        aria-label="View enquiry"
                       >
                         <EyeIcon className="w-5 h-5" />
                       </motion.button>
@@ -1881,6 +1915,23 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
           </div>
         </>
       )}
+      {/* ────────────────────────────────────── */}
+      {/* DRAWER EDIT – MUST BE HERE (GLOBAL) */}
+      {drawerOpen && selectedBookingId && (
+        <DrawerEdit
+          isOpen={drawerOpen}
+          onClose={() => {
+            console.log('%c[Drawer] Closed', 'color: red');
+            setDrawerOpen(false);
+          }}
+          bookingIdentifier={selectedBookingId}
+          onUpdateSuccess={() => {
+            refetch();
+            toast.success('Booking updated!');
+          }}
+        />
+      )}
+      {/* ────────────────────────────────────── */}
 
       <Modal
         isOpen={modalIsOpen}
