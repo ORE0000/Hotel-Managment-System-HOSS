@@ -37,7 +37,7 @@ import HOSSPreview from './PdfPreview/HOSSPreview';
 import HOSSSummaryPreview from './PdfPreview/HOSSSummaryPreview';
 import './BillingSystem/Billing.css';
 import './PdfPreview/Summary.css';
-import { DrawerEdit } from './DrawerEdit';
+import DrawerEdit from './DrawerEdit/DrawerEdit';
 
 Modal.setAppElement('#root');
 
@@ -312,7 +312,9 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
           heightLeft -= pageHeight;
         }
 
-        pdf.save(`hoss_booking_${selectedBooking.guestName}_${selectedBooking.checkIn}.pdf`);
+        pdf.save(
+          `hoss_booking_${selectedBooking.guestName}_${selectedBooking.checkIn}.pdf`
+        );
         toast.success('Booking details downloaded as PDF');
         if (container) container.removeChild(element);
       });
@@ -369,7 +371,9 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
           heightLeft -= pageHeight;
         }
 
-        pdf.save(`hoss_summary_${selectedBooking.guestName}_${selectedBooking.checkIn}.pdf`);
+        pdf.save(
+          `hoss_summary_${selectedBooking.guestName}_${selectedBooking.checkIn}.pdf`
+        );
         toast.success('Summary downloaded as PDF');
         if (container) container.removeChild(element);
       });
@@ -377,7 +381,12 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
   };
 
   const downloadCSV = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
+    const data =
+      selectedRows.size > 0
+        ? filteredData.filter((_: ExtendedBookingDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
+        : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
       return;
@@ -465,13 +474,20 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
   };
 
   const downloadJSON = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
+    const data =
+      selectedRows.size > 0
+        ? filteredData.filter((_: ExtendedBookingDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
+        : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
       return;
     }
     const jsonContent = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const blob = new Blob([jsonContent], {
+      type: 'application/json;charset=utf-8;',
+    });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `hoss_bookings_${new Date().toISOString()}.json`;
@@ -479,120 +495,145 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
     toast.success('JSON downloaded successfully');
   };
 
-const downloadPDF = async () => {
-  const data = selectedRows.size > 0
-    ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx))
-    : filteredData;
-  if (data.length === 0) {
-    toast.warn('No data available to download');
-    return;
-  }
-
-  try {
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    const indices = selectedRows.size > 0
-      ? Array.from(selectedRows)
-      : filteredData.map((_, idx) => idx);
-
-    for (let i = 0; i < indices.length; i++) {
-      const originalIndex = indices[i];
-      const booking = data[i];
-      const element = document.createElement('div');
-      element.id = `hoss-preview-${originalIndex}`;
-      element.style.display = 'block';
-      element.style.visibility = 'visible';
-      element.style.position = 'fixed';
-      element.style.top = '0';
-      element.style.left = '0';
-      element.style.width = '794px'; // A4 portrait width (210mm * ~3.78px/mm)
-      element.style.height = 'auto';
-      element.style.zIndex = '9999';
-
-      const container = document.querySelector('.pdf-preview-container');
-      if (!container) {
-        toast.error('PDF preview container not found');
-        continue;
-      }
-      container.setAttribute('style', 'display: block; position: fixed; top: 0; left: 0; z-index: 9999; width: 794px;');
-      container.appendChild(element);
-      const root = createRoot(element);
-      root.render(<HOSSPreview bookingData={booking} />);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      console.log(`Element dimensions for hoss-preview-${originalIndex} before html2canvas:`, {
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-        scrollWidth: element.scrollWidth,
-        scrollHeight: element.scrollHeight,
-      });
-
-      const naturalHeight = element.scrollHeight;
-      const canvas = await html2canvas(element, {
-        scale: 1,
-        useCORS: true,
-        logging: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: naturalHeight,
-        windowWidth: 794,
-      });
-
-      if (canvas.width === 0 || canvas.height === 0) {
-        console.warn(`Canvas for booking ${originalIndex} is empty`);
-        continue;
-      }
-
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const imgWidth = 210; // A4 portrait width in mm
-      const pageHeight = 297; // A4 portrait height in mm
-      const margin = 5;
-      const contentWidth = imgWidth - 2 * margin;
-      const contentHeight = pageHeight - 2 * margin;
-
-      const aspectRatio = canvas.width / canvas.height;
-      let scaledWidth = contentWidth;
-      let scaledHeight = scaledWidth / aspectRatio;
-
-      if (scaledHeight > contentHeight) {
-        scaledHeight = contentHeight;
-        scaledWidth = scaledHeight * aspectRatio;
-      }
-
-      const xOffset = (imgWidth - scaledWidth) / 2;
-      const yOffset = (pageHeight - scaledHeight) / 2;
-
-      if (i > 0) {
-        pdf.addPage();
-      }
-
-      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, scaledWidth, scaledHeight);
-
-      pdf.setLineWidth(0.5);
-      pdf.setDrawColor(150, 150, 150);
-      pdf.rect(margin, margin, contentWidth, contentHeight);
-
-      root.unmount();
-      container.removeChild(element);
-      container.setAttribute('style', 'display: none; position: fixed; top: 0; left: 0;');
+  const downloadPDF = async () => {
+    const data =
+      selectedRows.size > 0
+        ? filteredData.filter((_: ExtendedBookingDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
+        : filteredData;
+    if (data.length === 0) {
+      toast.warn('No data available to download');
+      return;
     }
 
-    pdf.save(`hoss_bookings_${new Date().toISOString()}.pdf`);
-    toast.success('PDF downloaded successfully');
-  } catch (error) {
-    console.error('Multiple bookings PDF generation error:', error);
-    toast.error('Failed to generate PDF');
-  }
-};
+    try {
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const indices =
+        selectedRows.size > 0
+          ? Array.from(selectedRows)
+          : filteredData.map((_, idx) => idx);
+
+      for (let i = 0; i < indices.length; i++) {
+        const originalIndex = indices[i];
+        const booking = data[i];
+        const element = document.createElement('div');
+        element.id = `hoss-preview-${originalIndex}`;
+        element.style.display = 'block';
+        element.style.visibility = 'visible';
+        element.style.position = 'fixed';
+        element.style.top = '0';
+        element.style.left = '0';
+        element.style.width = '794px'; // A4 portrait width (210mm * ~3.78px/mm)
+        element.style.height = 'auto';
+        element.style.zIndex = '9999';
+
+        const container = document.querySelector('.pdf-preview-container');
+        if (!container) {
+          toast.error('PDF preview container not found');
+          continue;
+        }
+        container.setAttribute(
+          'style',
+          'display: block; position: fixed; top: 0; left: 0; z-index: 9999; width: 794px;'
+        );
+        container.appendChild(element);
+        const root = createRoot(element);
+        root.render(<HOSSPreview bookingData={booking} />);
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        console.log(
+          `Element dimensions for hoss-preview-${originalIndex} before html2canvas:`,
+          {
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+            scrollWidth: element.scrollWidth,
+            scrollHeight: element.scrollHeight,
+          }
+        );
+
+        const naturalHeight = element.scrollHeight;
+        const canvas = await html2canvas(element, {
+          scale: 1,
+          useCORS: true,
+          logging: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: 794,
+          height: naturalHeight,
+          windowWidth: 794,
+        });
+
+        if (canvas.width === 0 || canvas.height === 0) {
+          console.warn(`Canvas for booking ${originalIndex} is empty`);
+          continue;
+        }
+
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const imgWidth = 210; // A4 portrait width in mm
+        const pageHeight = 297; // A4 portrait height in mm
+        const margin = 5;
+        const contentWidth = imgWidth - 2 * margin;
+        const contentHeight = pageHeight - 2 * margin;
+
+        const aspectRatio = canvas.width / canvas.height;
+        let scaledWidth = contentWidth;
+        let scaledHeight = scaledWidth / aspectRatio;
+
+        if (scaledHeight > contentHeight) {
+          scaledHeight = contentHeight;
+          scaledWidth = scaledHeight * aspectRatio;
+        }
+
+        const xOffset = (imgWidth - scaledWidth) / 2;
+        const yOffset = (pageHeight - scaledHeight) / 2;
+
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(
+          imgData,
+          'JPEG',
+          xOffset,
+          yOffset,
+          scaledWidth,
+          scaledHeight
+        );
+
+        pdf.setLineWidth(0.5);
+        pdf.setDrawColor(150, 150, 150);
+        pdf.rect(margin, margin, contentWidth, contentHeight);
+
+        root.unmount();
+        container.removeChild(element);
+        container.setAttribute(
+          'style',
+          'display: none; position: fixed; top: 0; left: 0;'
+        );
+      }
+
+      pdf.save(`hoss_bookings_${new Date().toISOString()}.pdf`);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Multiple bookings PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
 
   const downloadSummaryCSV = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
+    const data =
+      selectedRows.size > 0
+        ? filteredData.filter((_: ExtendedBookingDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
+        : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
       return;
@@ -644,7 +685,12 @@ const downloadPDF = async () => {
   };
 
   const downloadSummaryJSON = () => {
-    const data = selectedRows.size > 0 ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx)) : filteredData;
+    const data =
+      selectedRows.size > 0
+        ? filteredData.filter((_: ExtendedBookingDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
+        : filteredData;
     if (data.length === 0) {
       toast.warn('No data available to download');
       return;
@@ -667,7 +713,9 @@ const downloadPDF = async () => {
       status: item.status,
     }));
     const jsonContent = JSON.stringify(summaryData, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const blob = new Blob([jsonContent], {
+      type: 'application/json;charset=utf-8;',
+    });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `hoss_summary_${new Date().toISOString()}.json`;
@@ -675,118 +723,142 @@ const downloadPDF = async () => {
     toast.success('Summary JSON downloaded successfully');
   };
 
-const downloadSummaryPDF = async () => {
-  const data = selectedRows.size > 0
-    ? filteredData.filter((_: ExtendedBookingDetail, idx: number) => selectedRows.has(idx))
-    : filteredData;
-  if (data.length === 0) {
-    toast.warn('No data available to download');
-    return;
-  }
-
-  try {
-    const pdf = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    const totalPages = Math.ceil(data.length / itemsPerPagePDF);
-
-    for (let page = 0; page < totalPages; page++) {
-      const start = page * itemsPerPagePDF;
-      const end = Math.min(start + itemsPerPagePDF, data.length);
-      const pageData = data.slice(start, end);
-
-      const element = document.createElement('div');
-      element.id = `pdf-hoss-summary-preview-page-${page}`;
-      element.className = 'summary-preview';
-      element.style.width = '1122px'; // A4 landscape width (297mm * ~3.78px/mm)
-      element.style.minHeight = '794px'; // A4 landscape height (210mm * ~3.78px/mm)
-      element.style.boxSizing = 'border-box';
-      element.style.backgroundColor = '#ffffff';
-
-      const container = document.querySelector('.summary-preview-container');
-      if (!container) {
-        throw new Error('Summary preview container not found');
-      }
-
-      container.appendChild(element);
-      container.setAttribute('style', 'display: block; position: fixed; top: 0; left: 0; z-index: 9999; width: 1122px;');
-
-      const root = createRoot(element);
-      root.render(<HOSSSummaryPreview bookingData={pageData} />);
-
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      console.log(`Element dimensions for pdf-hoss-summary-preview-page-${page} before html2canvas:`, {
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-        scrollWidth: element.scrollWidth,
-        scrollHeight: element.scrollHeight,
-      });
-
-      const naturalHeight = element.scrollHeight;
-      const canvas = await html2canvas(element, {
-        scale: 1,
-        useCORS: true,
-        logging: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 1122,
-        height: naturalHeight,
-        windowWidth: 1122,
-      });
-
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error('Canvas is empty');
-      }
-
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const imgWidth = 297; // A4 landscape width in mm
-      const pageHeight = 210; // A4 landscape height in mm
-      const margin = 5;
-      const contentWidth = imgWidth - 2 * margin;
-      const contentHeight = pageHeight - 2 * margin;
-
-      const aspectRatio = canvas.width / canvas.height;
-      let scaledWidth = contentWidth;
-      let scaledHeight = scaledWidth / aspectRatio;
-
-      if (scaledHeight > contentHeight) {
-        scaledHeight = contentHeight;
-        scaledWidth = scaledHeight * aspectRatio;
-      }
-
-      const xOffset = (imgWidth - scaledWidth) / 2;
-      const yOffset = (pageHeight - scaledHeight) / 2;
-
-      if (page > 0) {
-        pdf.addPage();
-      }
-
-      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, scaledWidth, scaledHeight);
-
-      pdf.setLineWidth(0.5);
-      pdf.setDrawColor(150, 150, 150);
-      pdf.rect(margin, margin, contentWidth, contentHeight);
-
-      pdf.setFontSize(10);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text(`Page ${page + 1} of ${totalPages}`, imgWidth - 20, pageHeight - 10, { align: 'right' });
-
-      root.unmount();
-      container.removeChild(element);
-      container.setAttribute('style', 'display: none; position: fixed; top: 0; left: 0;');
+  const downloadSummaryPDF = async () => {
+    const data =
+      selectedRows.size > 0
+        ? filteredData.filter((_: ExtendedBookingDetail, idx: number) =>
+            selectedRows.has(idx)
+          )
+        : filteredData;
+    if (data.length === 0) {
+      toast.warn('No data available to download');
+      return;
     }
 
-    pdf.save(`hoss_summary_${new Date().toISOString()}.pdf`);
-    toast.success('Summary PDF downloaded successfully');
-  } catch (error) {
-    console.error('Summary PDF generation error:', error);
-    toast.error('Failed to generate summary PDF');
-  }
-};
+    try {
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const totalPages = Math.ceil(data.length / itemsPerPagePDF);
+
+      for (let page = 0; page < totalPages; page++) {
+        const start = page * itemsPerPagePDF;
+        const end = Math.min(start + itemsPerPagePDF, data.length);
+        const pageData = data.slice(start, end);
+
+        const element = document.createElement('div');
+        element.id = `pdf-hoss-summary-preview-page-${page}`;
+        element.className = 'summary-preview';
+        element.style.width = '1122px'; // A4 landscape width (297mm * ~3.78px/mm)
+        element.style.minHeight = '794px'; // A4 landscape height (210mm * ~3.78px/mm)
+        element.style.boxSizing = 'border-box';
+        element.style.backgroundColor = '#ffffff';
+
+        const container = document.querySelector('.summary-preview-container');
+        if (!container) {
+          throw new Error('Summary preview container not found');
+        }
+
+        container.appendChild(element);
+        container.setAttribute(
+          'style',
+          'display: block; position: fixed; top: 0; left: 0; z-index: 9999; width: 1122px;'
+        );
+
+        const root = createRoot(element);
+        root.render(<HOSSSummaryPreview bookingData={pageData} />);
+
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        console.log(
+          `Element dimensions for pdf-hoss-summary-preview-page-${page} before html2canvas:`,
+          {
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+            scrollWidth: element.scrollWidth,
+            scrollHeight: element.scrollHeight,
+          }
+        );
+
+        const naturalHeight = element.scrollHeight;
+        const canvas = await html2canvas(element, {
+          scale: 1,
+          useCORS: true,
+          logging: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: 1122,
+          height: naturalHeight,
+          windowWidth: 1122,
+        });
+
+        if (canvas.width === 0 || canvas.height === 0) {
+          throw new Error('Canvas is empty');
+        }
+
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const imgWidth = 297; // A4 landscape width in mm
+        const pageHeight = 210; // A4 landscape height in mm
+        const margin = 5;
+        const contentWidth = imgWidth - 2 * margin;
+        const contentHeight = pageHeight - 2 * margin;
+
+        const aspectRatio = canvas.width / canvas.height;
+        let scaledWidth = contentWidth;
+        let scaledHeight = scaledWidth / aspectRatio;
+
+        if (scaledHeight > contentHeight) {
+          scaledHeight = contentHeight;
+          scaledWidth = scaledHeight * aspectRatio;
+        }
+
+        const xOffset = (imgWidth - scaledWidth) / 2;
+        const yOffset = (pageHeight - scaledHeight) / 2;
+
+        if (page > 0) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(
+          imgData,
+          'JPEG',
+          xOffset,
+          yOffset,
+          scaledWidth,
+          scaledHeight
+        );
+
+        pdf.setLineWidth(0.5);
+        pdf.setDrawColor(150, 150, 150);
+        pdf.rect(margin, margin, contentWidth, contentHeight);
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(
+          `Page ${page + 1} of ${totalPages}`,
+          imgWidth - 20,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+
+        root.unmount();
+        container.removeChild(element);
+        container.setAttribute(
+          'style',
+          'display: none; position: fixed; top: 0; left: 0;'
+        );
+      }
+
+      pdf.save(`hoss_summary_${new Date().toISOString()}.pdf`);
+      toast.success('Summary PDF downloaded successfully');
+    } catch (error) {
+      console.error('Summary PDF generation error:', error);
+      toast.error('Failed to generate summary PDF');
+    }
+  };
 
   const filteredData = useMemo(() => {
     if (!hossBookings || !Array.isArray(hossBookings)) return [];
@@ -836,7 +908,8 @@ const downloadSummaryPDF = async () => {
   const totals = useMemo(
     () => ({
       billAmount: filteredData.reduce(
-        (sum: number, item: ExtendedBookingDetail) => sum + (item.billAmount || 0),
+        (sum: number, item: ExtendedBookingDetail) =>
+          sum + (item.billAmount || 0),
         0
       ),
       advance: filteredData.reduce(
@@ -868,8 +941,14 @@ const downloadSummaryPDF = async () => {
 
   return (
     <div className="space-y-8 p-6 w-full">
-      <div className="pdf-preview-container" style={{ display: 'none', position: 'fixed', top: 0, left: 0 }}></div>
-      <div className="summary-preview-container" style={{ display: 'none', position: 'fixed', top: 0, left: 0 }}></div>
+      <div
+        className="pdf-preview-container"
+        style={{ display: 'none', position: 'fixed', top: 0, left: 0 }}
+      ></div>
+      <div
+        className="summary-preview-container"
+        style={{ display: 'none', position: 'fixed', top: 0, left: 0 }}
+      ></div>
 
       <div className="flex justify-between items-center mb-4 sticky top-0 bg-[var(--bg-primary)] z-20 py-3">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient">
@@ -1181,119 +1260,155 @@ const downloadSummaryPDF = async () => {
                 </thead>
                 <tbody>
                   {paginatedData.length > 0 ? (
-                    paginatedData.map((item: ExtendedBookingDetail, idx: number) => (
-                      <motion.tr
-                        key={item.guestName + item.checkIn}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className={`${
-                          selectedRows.has((page - 1) * itemsPerPage + idx)
-                            ? 'bg-[var(--sidebar-hover)]'
-                            : ''
-                        }`}
-                      >
-                        <td className="p-4">
-                          <label className="custom-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={selectedRows.has(
-                                (page - 1) * itemsPerPage + idx
-                              )}
-                              onChange={() =>
-                                toggleRowSelection(
+                    paginatedData.map(
+                      (item: ExtendedBookingDetail, idx: number) => (
+                        <motion.tr
+                          key={item.guestName + item.checkIn}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`${
+                            selectedRows.has((page - 1) * itemsPerPage + idx)
+                              ? 'bg-[var(--sidebar-hover)]'
+                              : ''
+                          }`}
+                        >
+                          <td className="p-4">
+                            <label className="custom-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={selectedRows.has(
                                   (page - 1) * itemsPerPage + idx
-                                )
-                              }
-                              aria-label={`Select row ${idx + 1}`}
-                            />
-                            <span className="checkbox-indicator"></span>
-                          </label>
-                        </td>
-                        <td className="p-4 font-medium">{item.guestName}</td>
-                        <td className="p-4">{item.contact}</td>
-                        <td className="p-4">{item.hotel}</td>
-                        <td className="p-4">{item.plan}</td>
-                        <td className="p-4">{item.checkIn}</td>
-                        <td className="p-4">{item.checkOut}</td>
-                        <td className="p-4">{item.day}</td>
-                        <td className="p-4">{item.pax || 'N/A'}</td>
-                        <td className="p-4">{item.roomName.doubleBed || 0}</td>
-                        <td className="p-4">{item.roomName.tripleBed || 0}</td>
-                        <td className="p-4">{item.roomName.fourBed || 0}</td>
-                        <td className="p-4">{item.roomName.extraBed || 0}</td>
-                        <td className="p-4">{item.roomName.kitchen || 0}</td>
-                        <td className="p-4">₹{item.roomRent.doubleBed.toLocaleString()}</td>
-                        <td className="p-4">₹{item.roomRent.tripleBed.toLocaleString()}</td>
-                        <td className="p-4">₹{item.roomRent.fourBed.toLocaleString()}</td>
-                        <td className="p-4">₹{item.roomRent.extraBed.toLocaleString()}</td>
-                        <td className="p-4">₹{item.roomRent.kitchen.toLocaleString()}</td>
-                        <td className="p-4">
-                          <motion.span
-                            className="font-semibold text-blue-400"
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            ₹{item.billAmount?.toLocaleString() || '0'}
-                          </motion.span>
-                        </td>
-                        <td className="p-4">
-                          <motion.span
-                            className="font-semibold text-emerald-400"
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            ₹{item.advance?.toLocaleString() || '0'}
-                          </motion.span>
-                        </td>
-                        <td className="p-4">
-                          <motion.span
-                            className="font-semibold text-rose-400"
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            ₹{(item.due || 0).toLocaleString()}
-                          </motion.span>
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`badge badge-${item.status.toLowerCase()}`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td className="p-4 flex gap-2 items-center">
-                          <motion.button
-                            onClick={() => openModal(item)}
-                            className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            aria-label={`View details for ${item.guestName}`}
-                          >
-                            <EyeIcon className="w-4 h-4" /> View
-                          </motion.button>
-                          <motion.button
-                            className="btn-secondary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            aria-label={`Edit details for ${item.guestName}`}
-                          >
-                            <PencilIcon className="w-4 h-4" /> Edit
-                          </motion.button>
-                          <motion.button
-                            className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            aria-label={`Generate bill for ${item.guestName}`}
-                          >
-                            <DocumentTextIcon className="w-4 h-4" /> Bill
-                          </motion.button>
-                        </td>
-                      </motion.tr>
-                    ))
+                                )}
+                                onChange={() =>
+                                  toggleRowSelection(
+                                    (page - 1) * itemsPerPage + idx
+                                  )
+                                }
+                                aria-label={`Select row ${idx + 1}`}
+                              />
+                              <span className="checkbox-indicator"></span>
+                            </label>
+                          </td>
+                          <td className="p-4 font-medium">{item.guestName}</td>
+                          <td className="p-4">{item.contact}</td>
+                          <td className="p-4">{item.hotel}</td>
+                          <td className="p-4">{item.plan}</td>
+                          <td className="p-4">{item.checkIn}</td>
+                          <td className="p-4">{item.checkOut}</td>
+                          <td className="p-4">{item.day}</td>
+                          <td className="p-4">{item.pax || 'N/A'}</td>
+                          <td className="p-4">
+                            {item.roomName.doubleBed || 0}
+                          </td>
+                          <td className="p-4">
+                            {item.roomName.tripleBed || 0}
+                          </td>
+                          <td className="p-4">{item.roomName.fourBed || 0}</td>
+                          <td className="p-4">{item.roomName.extraBed || 0}</td>
+                          <td className="p-4">{item.roomName.kitchen || 0}</td>
+                          <td className="p-4">
+                            ₹{item.roomRent.doubleBed.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            ₹{item.roomRent.tripleBed.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            ₹{item.roomRent.fourBed.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            ₹{item.roomRent.extraBed.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            ₹{item.roomRent.kitchen.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            <motion.span
+                              className="font-semibold text-blue-400"
+                              initial={{ scale: 0.95 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              ₹{item.billAmount?.toLocaleString() || '0'}
+                            </motion.span>
+                          </td>
+                          <td className="p-4">
+                            <motion.span
+                              className="font-semibold text-emerald-400"
+                              initial={{ scale: 0.95 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              ₹{item.advance?.toLocaleString() || '0'}
+                            </motion.span>
+                          </td>
+                          <td className="p-4">
+                            <motion.span
+                              className="font-semibold text-rose-400"
+                              initial={{ scale: 0.95 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              ₹{(item.due || 0).toLocaleString()}
+                            </motion.span>
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`badge badge-${item.status.toLowerCase()}`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+                          <td className="p-4 flex gap-2 items-center">
+                            <motion.button
+                              onClick={() => openModal(item)}
+                              className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              aria-label={`View details for ${item.guestName}`}
+                            >
+                              <EyeIcon className="w-4 h-4" /> View
+                            </motion.button>
+                            {/* ──────────────────────────────────────
+                            <motion.button
+                              onClick={() => {
+                                const cleanHotel = item.hotel
+                                  .split('/')[0]
+                                  .trim();
+                                console.log(
+                                  '%c[Edit Click] Opening drawer',
+                                  'color: purple',
+                                  { item, cleanHotel }
+                                );
+
+                                setSelectedBookingId({
+                                  guestName: item.guestName,
+                                  hotelName: cleanHotel,
+                                  checkIn: item.checkIn,
+                                  sheetName: 'HOSS',
+                                });
+                                setDrawerOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-[var(--hover-bg)] hover:bg-[var(--card-bg)] transition"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              aria-label={`Edit ${item.guestName}`}
+                            >
+                              <PencilIcon className="w-4 h-4" /> Edit
+                            </motion.button>
+                            */}
+                            <motion.button
+                              className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              aria-label={`Generate bill for ${item.guestName}`}
+                            >
+                              <DocumentTextIcon className="w-4 h-4" /> Bill
+                            </motion.button>
+                          </td>
+                        </motion.tr>
+                      )
+                    )
                   ) : (
                     <tr>
                       <td
@@ -1568,7 +1683,9 @@ const downloadSummaryPDF = async () => {
                             {item.cashOut?.toLocaleString() || '0'}
                           </p>
                           <p>
-                            <span className="font-medium">Mode of Payment:</span>{' '}
+                            <span className="font-medium">
+                              Mode of Payment:
+                            </span>{' '}
                             {item.modeOfPayment}
                           </p>
                           <p>
@@ -1676,6 +1793,23 @@ const downloadSummaryPDF = async () => {
               </motion.div>
             )}
           </div>
+          {/* ────────────────────────────────────── */}
+          {/* DRAWER EDIT – MUST BE HERE (GLOBAL) */}
+          {drawerOpen && selectedBookingId && (
+            <DrawerEdit
+              isOpen={drawerOpen}
+              onClose={() => {
+                console.log('%c[Drawer] Closed', 'color: red');
+                setDrawerOpen(false);
+              }}
+              bookingIdentifier={selectedBookingId}
+              onUpdateSuccess={() => {
+                refetch();
+                toast.success('Booking updated!');
+              }}
+            />
+          )}
+          {/* ────────────────────────────────────── */}
 
           <Modal
             isOpen={modalIsOpen}
@@ -1719,71 +1853,183 @@ const downloadSummaryPDF = async () => {
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
-                      <h3 className="font-medium text-[var(--text-primary)] mb-2">Guest Information</h3>
+                      <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                        Guest Information
+                      </h3>
                       <div className="grid grid-cols-2 gap-2">
-                        <p><strong>Name:</strong> {selectedBooking.guestName}</p>
-                        <p><strong>Contact:</strong> {selectedBooking.contact || 'N/A'}</p>
-                        <p><strong>Hotel:</strong> {selectedBooking.hotel}</p>
-                        <p><strong>PAX:</strong> {selectedBooking.pax || 'N/A'}</p>
+                        <p>
+                          <strong>Name:</strong> {selectedBooking.guestName}
+                        </p>
+                        <p>
+                          <strong>Contact:</strong>{' '}
+                          {selectedBooking.contact || 'N/A'}
+                        </p>
+                        <p>
+                          <strong>Hotel:</strong> {selectedBooking.hotel}
+                        </p>
+                        <p>
+                          <strong>PAX:</strong> {selectedBooking.pax || 'N/A'}
+                        </p>
                       </div>
                     </div>
                     <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
-                      <h3 className="font-medium text-[var(--text-primary)] mb-2">Booking Details</h3>
+                      <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                        Booking Details
+                      </h3>
                       <div className="grid grid-cols-2 gap-2">
-                        <p><strong>Plan:</strong> {selectedBooking.plan}</p>
-                        <p><strong>Check-In:</strong> {selectedBooking.checkIn}</p>
-                        <p><strong>Check-Out:</strong> {selectedBooking.checkOut}</p>
-                        <p><strong>Duration:</strong> {selectedBooking.day} days</p>
-                        <p><strong>Status:</strong> <span className={`badge badge-${selectedBooking.status.toLowerCase()}`}>{selectedBooking.status}</span></p>
+                        <p>
+                          <strong>Plan:</strong> {selectedBooking.plan}
+                        </p>
+                        <p>
+                          <strong>Check-In:</strong> {selectedBooking.checkIn}
+                        </p>
+                        <p>
+                          <strong>Check-Out:</strong> {selectedBooking.checkOut}
+                        </p>
+                        <p>
+                          <strong>Duration:</strong> {selectedBooking.day} days
+                        </p>
+                        <p>
+                          <strong>Status:</strong>{' '}
+                          <span
+                            className={`badge badge-${selectedBooking.status.toLowerCase()}`}
+                          >
+                            {selectedBooking.status}
+                          </span>
+                        </p>
                       </div>
                     </div>
                     <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm col-span-1 md:col-span-2">
-                      <h3 className="font-medium text-[var(--text-primary)] mb-2">Room Details</h3>
+                      <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                        Room Details
+                      </h3>
                       <div className="grid grid-cols-3 gap-2">
                         {Number(selectedBooking.roomName.doubleBed) > 0 && (
                           <div>
-                            <p><strong>Double Bed:</strong> {selectedBooking.roomName.doubleBed} (Rate: ₹{selectedBooking.roomRent.doubleBed.toLocaleString()}{Number(selectedBooking.discount.doubleBed) > 0 ? `, Discount: ₹${selectedBooking.discount.doubleBed.toLocaleString()}` : ''})</p>
+                            <p>
+                              <strong>Double Bed:</strong>{' '}
+                              {selectedBooking.roomName.doubleBed} (Rate: ₹
+                              {selectedBooking.roomRent.doubleBed.toLocaleString()}
+                              {Number(selectedBooking.discount.doubleBed) > 0
+                                ? `, Discount: ₹${selectedBooking.discount.doubleBed.toLocaleString()}`
+                                : ''}
+                              )
+                            </p>
                           </div>
                         )}
                         {Number(selectedBooking.roomName.tripleBed) > 0 && (
                           <div>
-                            <p><strong>Triple Bed:</strong> {selectedBooking.roomName.tripleBed} (Rate: ₹{selectedBooking.roomRent.tripleBed.toLocaleString()}{Number(selectedBooking.discount.tripleBed) > 0 ? `, Discount: ₹${selectedBooking.discount.tripleBed.toLocaleString()}` : ''})</p>
+                            <p>
+                              <strong>Triple Bed:</strong>{' '}
+                              {selectedBooking.roomName.tripleBed} (Rate: ₹
+                              {selectedBooking.roomRent.tripleBed.toLocaleString()}
+                              {Number(selectedBooking.discount.tripleBed) > 0
+                                ? `, Discount: ₹${selectedBooking.discount.tripleBed.toLocaleString()}`
+                                : ''}
+                              )
+                            </p>
                           </div>
                         )}
                         {Number(selectedBooking.roomName.fourBed) > 0 && (
                           <div>
-                            <p><strong>Four Bed:</strong> {selectedBooking.roomName.fourBed} (Rate: ₹{selectedBooking.roomRent.fourBed.toLocaleString()}{Number(selectedBooking.discount.fourBed) > 0 ? `, Discount: ₹${selectedBooking.discount.fourBed.toLocaleString()}` : ''})</p>
+                            <p>
+                              <strong>Four Bed:</strong>{' '}
+                              {selectedBooking.roomName.fourBed} (Rate: ₹
+                              {selectedBooking.roomRent.fourBed.toLocaleString()}
+                              {Number(selectedBooking.discount.fourBed) > 0
+                                ? `, Discount: ₹${selectedBooking.discount.fourBed.toLocaleString()}`
+                                : ''}
+                              )
+                            </p>
                           </div>
                         )}
                         {Number(selectedBooking.roomName.extraBed) > 0 && (
                           <div>
-                            <p><strong>Extra Bed:</strong> {selectedBooking.roomName.extraBed} (Rate: ₹{selectedBooking.roomRent.extraBed.toLocaleString()}{Number(selectedBooking.discount.extraBed) > 0 ? `, Discount: ₹${selectedBooking.discount.extraBed.toLocaleString()}` : ''})</p>
+                            <p>
+                              <strong>Extra Bed:</strong>{' '}
+                              {selectedBooking.roomName.extraBed} (Rate: ₹
+                              {selectedBooking.roomRent.extraBed.toLocaleString()}
+                              {Number(selectedBooking.discount.extraBed) > 0
+                                ? `, Discount: ₹${selectedBooking.discount.extraBed.toLocaleString()}`
+                                : ''}
+                              )
+                            </p>
                           </div>
                         )}
                         {Number(selectedBooking.roomName.kitchen) > 0 && (
                           <div>
-                            <p><strong>Kitchen:</strong> {selectedBooking.roomName.kitchen} (Rate: ₹{selectedBooking.roomRent.kitchen.toLocaleString()}{Number(selectedBooking.discount.kitchen) > 0 ? `, Discount: ₹${selectedBooking.discount.kitchen.toLocaleString()}` : ''})</p>
+                            <p>
+                              <strong>Kitchen:</strong>{' '}
+                              {selectedBooking.roomName.kitchen} (Rate: ₹
+                              {selectedBooking.roomRent.kitchen.toLocaleString()}
+                              {Number(selectedBooking.discount.kitchen) > 0
+                                ? `, Discount: ₹${selectedBooking.discount.kitchen.toLocaleString()}`
+                                : ''}
+                              )
+                            </p>
                           </div>
                         )}
                       </div>
                     </div>
                     <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm col-span-1 md:col-span-2">
-                      <h3 className="font-medium text-[var(--text-primary)] mb-2">Financial Summary</h3>
+                      <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                        Financial Summary
+                      </h3>
                       <div className="grid grid-cols-3 gap-2">
-                        <p><strong>Total Bill:</strong> <span className="text-blue-400 font-semibold">₹{selectedBooking.billAmount?.toLocaleString() || '0'}</span></p>
-                        <p><strong>Advance Paid:</strong> <span className="text-emerald-400 font-semibold">₹{selectedBooking.advance?.toLocaleString() || '0'}</span></p>
-                        <p><strong>Due Amount:</strong> <span className="text-rose-400 font-semibold">₹{(selectedBooking.due || 0).toLocaleString()}</span></p>
-                        <p><strong>Cash-In:</strong> <span className="text-teal-400">₹{selectedBooking.cashIn?.toLocaleString() || '0'}</span></p>
-                        <p><strong>Cash-Out:</strong> <span className="text-orange-400">₹{selectedBooking.cashOut?.toLocaleString() || '0'}</span></p>
+                        <p>
+                          <strong>Total Bill:</strong>{' '}
+                          <span className="text-blue-400 font-semibold">
+                            ₹
+                            {selectedBooking.billAmount?.toLocaleString() ||
+                              '0'}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Advance Paid:</strong>{' '}
+                          <span className="text-emerald-400 font-semibold">
+                            ₹{selectedBooking.advance?.toLocaleString() || '0'}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Due Amount:</strong>{' '}
+                          <span className="text-rose-400 font-semibold">
+                            ₹{(selectedBooking.due || 0).toLocaleString()}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Cash-In:</strong>{' '}
+                          <span className="text-teal-400">
+                            ₹{selectedBooking.cashIn?.toLocaleString() || '0'}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Cash-Out:</strong>{' '}
+                          <span className="text-orange-400">
+                            ₹{selectedBooking.cashOut?.toLocaleString() || '0'}
+                          </span>
+                        </p>
                       </div>
                     </div>
                     <div className="bg-[var(--card-bg)] p-4 rounded-lg border border-[var(--border-color)] shadow-sm">
-                      <h3 className="font-medium text-[var(--text-primary)] mb-2">Payment Information</h3>
+                      <h3 className="font-medium text-[var(--text-primary)] mb-2">
+                        Payment Information
+                      </h3>
                       <div className="grid grid-cols-2 gap-2">
-                        <p><strong>Mode:</strong> {selectedBooking.modeOfPayment}</p>
-                        <p><strong>To Account:</strong> {selectedBooking.toAccount || 'N/A'}</p>
-                        <p><strong>Date:</strong> {selectedBooking.dateBooked || 'N/A'}</p>
-                        <p><strong>Scheme:</strong> {selectedBooking.scheme || 'N/A'}</p>
+                        <p>
+                          <strong>Mode:</strong> {selectedBooking.modeOfPayment}
+                        </p>
+                        <p>
+                          <strong>To Account:</strong>{' '}
+                          {selectedBooking.toAccount || 'N/A'}
+                        </p>
+                        <p>
+                          <strong>Date:</strong>{' '}
+                          {selectedBooking.dateBooked || 'N/A'}
+                        </p>
+                        <p>
+                          <strong>Scheme:</strong>{' '}
+                          {selectedBooking.scheme || 'N/A'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1797,6 +2043,7 @@ const downloadSummaryPDF = async () => {
                     >
                       <FiCopy size={16} /> Copy Details
                     </motion.button>
+
                     <motion.button
                       onClick={printBookingDetails}
                       className="btn-primary flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-glow"
@@ -1806,6 +2053,7 @@ const downloadSummaryPDF = async () => {
                     >
                       <FiDownload size={16} /> Download PDF
                     </motion.button>
+
                     <motion.button
                       onClick={printSummaryDetails}
                       className="btn-primary flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-glow"
@@ -1814,6 +2062,30 @@ const downloadSummaryPDF = async () => {
                       aria-label="Download summary PDF"
                     >
                       <FiDownload size={16} /> Download Summary
+                    </motion.button>
+
+                    {/* ✏️ New Edit Button for HOSS */}
+                    <motion.button
+                      onClick={() => {
+                        const cleanHotel =
+                          selectedBooking?.hotel?.split('/')[0]?.trim() || '';
+                        setSelectedBookingId({
+                          guestName: selectedBooking?.guestName || '',
+                          hotelName: cleanHotel,
+                          checkIn: selectedBooking?.checkIn || '',
+                          sheetName: 'HOSS',
+                        });
+                        setDrawerOpen(true);
+                        closeModal(); // ✅ close modal when drawer opens
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm rounded-full font-medium shadow-glow text-white 
+                          bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 
+                          transition-all duration-200 active:scale-95"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      aria-label="Edit booking"
+                    >
+                      <PencilIcon className="w-4 h-4" /> Edit Booking
                     </motion.button>
                   </div>
                 </div>

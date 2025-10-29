@@ -1499,6 +1499,7 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                             <EyeIcon className="w-5 h-5 text-[var(--icon-bg-blue)]" />{' '}
                             View
                           </motion.button>
+                          {/* ──────────────────────────────────────
                           <motion.button
                             onClick={() => {
                               const cleanHotel = item.hotel
@@ -1524,7 +1525,9 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                             aria-label={`Edit ${item.guestName}`}
                           >
                             <PencilIcon className="w-4 h-4" /> Edit
+                            
                           </motion.button>
+                           */}
                           <motion.button
                             onClick={() => handleBillGenerate(item)}
                             className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
@@ -2158,6 +2161,7 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                 >
                   <FiCopy size={16} /> Copy Details
                 </motion.button>
+
                 <motion.button
                   onClick={printEnquiryDetails}
                   className="btn-primary flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-glow"
@@ -2167,6 +2171,7 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                 >
                   <FiDownload size={16} /> Download PDF
                 </motion.button>
+
                 <motion.button
                   onClick={printSummaryDetails}
                   className="btn-primary flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-glow"
@@ -2175,6 +2180,30 @@ on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                   aria-label="Download summary PDF"
                 >
                   <FiDownload size={16} /> Summary PDF
+                </motion.button>
+
+                {/* ✏️ Edit Button — Added beside the other 3 */}
+                <motion.button
+                  onClick={() => {
+                    const cleanHotel =
+                      selectedEnquiry?.hotel?.split('/')[0]?.trim() || '';
+                    setSelectedBookingId({
+                      guestName: selectedEnquiry?.guestName || '',
+                      hotelName: cleanHotel,
+                      checkIn: selectedEnquiry?.checkIn || '',
+                      sheetName: 'ENQRY',
+                    });
+                    setDrawerOpen(true);
+                    closeModal(); // ✅ close modal when drawer opens
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm rounded-full font-medium shadow-glow text-white 
+                        bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 
+                        transition-all duration-200 active:scale-95"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  aria-label="Edit enquiry"
+                >
+                  <PencilIcon className="w-4 h-4" /> Edit Booking
                 </motion.button>
               </div>
             </div>
