@@ -34,7 +34,7 @@
 }
 
 /* Dark mode overrides, aligned with global.css */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
   --card-bg: rgba(31, 41, 55, 0.2);
@@ -80,22 +80,30 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Neumorphic card */
 .neumorphic-card {
   background: var(--card-bg);
-  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.15), -4px -4px 8px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.15),
+    -4px -4px 8px rgba(255, 255, 255, 0.05);
   border: none;
   border-radius: 10px;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
 }
 
 /* Neumorphic card for buttons - avoid background override */
 button.neumorphic-card {
   background: none; /* Prevent background override for buttons */
-  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.15), -4px -4px 8px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.15),
+    -4px -4px 8px rgba(255, 255, 255, 0.05);
 }
 
 /* Card hover effect */
@@ -110,15 +118,21 @@ button.neumorphic-card {
 /* Neumorphic input */
 .neumorphic-input {
   background: var(--input-bg);
-  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.15), inset -3px -3px 6px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.15),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.05);
   border: none;
   border-radius: 8px;
   color: var(--input-text);
-  transition: box-shadow 0.3s ease, border 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    border 0.3s ease;
 }
 
 .neumorphic-input:focus {
-  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.2), inset -2px -2px 4px rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.1);
   outline: none;
   border: 1px solid var(--icon-bg-indigo);
 }
@@ -132,7 +146,9 @@ button.neumorphic-card {
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   width: 100%;
   line-height: 1.5;
 }
@@ -173,7 +189,11 @@ button.neumorphic-card {
 
 /* Page heading */
 .page-heading {
-  background: linear-gradient(to right, var(--icon-bg-indigo), var(--icon-bg-purple));
+  background: linear-gradient(
+    to right,
+    var(--icon-bg-indigo),
+    var(--icon-bg-purple)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -199,7 +219,11 @@ button {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 button:hover {
@@ -289,9 +313,11 @@ button:active {
 }
 
 /* Fallback text color for light mode in case background fails */
-[data-theme="light"] .bill-preview .edit-button,
-[data-theme="light"] .bill-preview .new-button {
-  color: var(--button-text-light); /* Fallback to dark text if background fails */
+[data-theme='light'] .bill-preview .edit-button,
+[data-theme='light'] .bill-preview .new-button {
+  color: var(
+    --button-text-light
+  ); /* Fallback to dark text if background fails */
 }
 
 /* Ensure buttons in forms are styled correctly */
@@ -328,7 +354,9 @@ form .generate-button:active {
   text-align: center;
   padding: 0.75rem 1rem;
   border-radius: 6px;
-  transition: background 0.3s ease, transform 0.3s ease;
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
 }
 
 .generate-button.tab:hover,
@@ -357,9 +385,13 @@ form .generate-button:active {
 
 /* PDF preview container */
 .pdf-preview-container {
-  visibility: hidden;
   position: absolute;
+  left: -99999px;
   top: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* PDF preview */
@@ -386,4 +418,52 @@ form .generate-button:active {
 /* Ensure heading alignment */
 .pdf-preview .text-center {
   text-align: center !important;
+}
+
+/* CLEAN OUTER LAYOUT (fixes big ugly box) */
+.outer-billing-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border-radius: 0 !important;
+}
+
+.outer-billing-wrapper.neumorphic-card {
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Clean header – no card, no border, no blur, no shadows */
+.clean-header {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove outer card and all shadows from Billing main wrapper */
+.clean-main-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+
+
+@media print {
+  :root {
+    color-scheme: light !important;
+  }
+
+  body, .force-light, .force-light * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
 }

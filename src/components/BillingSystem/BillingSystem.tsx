@@ -1,5 +1,13 @@
-import React, { useState , useRef, useEffect } from 'react';
-import { Calculator, FileText, Plus, Users, Coffee, Hotel, Plane } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Calculator,
+  FileText,
+  Plus,
+  Users,
+  Coffee,
+  Hotel,
+  Plane,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast'; // ← You already have this, just confirming
@@ -12,8 +20,6 @@ import ExportActions from './ExportActions';
 import { BillData, FormType } from 'src/types';
 import { calculateBillAmount, calculateDue } from '../../lib/calculationUtils';
 import './Billing.css';
-
-
 
 const initialBillData: BillData = {
   guestName: '',
@@ -47,7 +53,7 @@ const initialBillData: BillData = {
   toAccount: '',
   scheme: '',
   formType: 'customer',
-  ratePerGuest: 500
+  ratePerGuest: 500,
 };
 
 const BillingSystem: React.FC = () => {
@@ -55,7 +61,7 @@ const BillingSystem: React.FC = () => {
   const [currentBillIndex, setCurrentBillIndex] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [activeFormType, setActiveFormType] = useState<FormType>('customer');
-    const location = useLocation();
+  const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -112,17 +118,34 @@ const BillingSystem: React.FC = () => {
     navigate(location.pathname, { replace: true, state: null });
   }, [location.state, navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    
+
     const updateBills = [...bills];
-    const currentBill = { ...updateBills[currentBillIndex], formType: activeFormType };
-    
+    const currentBill = {
+      ...updateBills[currentBillIndex],
+      formType: activeFormType,
+    };
+
     const numericFields: (keyof BillData)[] = [
-      'days', 'pax', 'doubleBedRoom', 'tripleBedRoom', 'fourBedRoom',
-      'extraBedRoom', 'kitchenRoom', 'doubleBedRate', 'tripleBedRate',
-      'fourBedRate', 'extraBedRate', 'kitchenRate', 'advance', 'cashIn',
-      'cashOut', 'ratePerGuest'
+      'days',
+      'pax',
+      'doubleBedRoom',
+      'tripleBedRoom',
+      'fourBedRoom',
+      'extraBedRoom',
+      'kitchenRoom',
+      'doubleBedRate',
+      'tripleBedRate',
+      'fourBedRate',
+      'extraBedRate',
+      'kitchenRate',
+      'advance',
+      'cashIn',
+      'cashOut',
+      'ratePerGuest',
     ];
 
     if (numericFields.includes(name as keyof BillData)) {
@@ -138,7 +161,7 @@ const BillingSystem: React.FC = () => {
         const checkOutDate = new Date(currentBill.checkOut);
         const diffTime = checkOutDate.getTime() - checkInDate.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays > 0) {
           currentBill.days = diffDays;
         }
@@ -148,36 +171,39 @@ const BillingSystem: React.FC = () => {
     // Recalculate amounts
     currentBill.billAmount = calculateBillAmount(currentBill);
     currentBill.due = calculateDue(currentBill);
-    
+
     updateBills[currentBillIndex] = currentBill;
     setBills(updateBills);
   };
 
   const handleGenerateBill = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const updateBills = [...bills];
-    const currentBill = { ...updateBills[currentBillIndex], formType: activeFormType };
-    
+    const currentBill = {
+      ...updateBills[currentBillIndex],
+      formType: activeFormType,
+    };
+
     currentBill.billAmount = calculateBillAmount(currentBill);
     currentBill.due = calculateDue(currentBill);
-    
+
     updateBills[currentBillIndex] = currentBill;
     setBills(updateBills);
-    
+
     setShowPreview(true);
   };
 
   const handleNewBill = () => {
-    const newBill = { 
-      ...initialBillData, 
+    const newBill = {
+      ...initialBillData,
       formType: activeFormType,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
     };
     // Calculate initial amounts for new bill
     newBill.billAmount = calculateBillAmount(newBill);
     newBill.due = calculateDue(newBill);
-    
+
     setBills([...bills, newBill]);
     setCurrentBillIndex(bills.length);
     setShowPreview(false);
@@ -232,7 +258,7 @@ const BillingSystem: React.FC = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-center mb-8 glass-card p-6 rounded-2xl neumorphic-card"
+        className="text-center mb-8 clean-header"
       >
         <h1 className="text-3xl md:text-4xl font-bold text-gradient mb-2 flex items-center justify-center gap-2">
           <Hotel size={32} className="text-[var(--icon-bg-indigo)]" />
@@ -252,10 +278,30 @@ const BillingSystem: React.FC = () => {
           className="flex justify-center gap-4 mb-8 flex-wrap"
         >
           {[
-            { type: 'customer', label: 'Customer Billing', icon: <Users size={20} />, color: 'indigo' },
-            { type: 'restaurant', label: 'Restaurant Billing', icon: <Coffee size={20} />, color: 'green' },
-            { type: 'hotel', label: 'Hotel Payments', icon: <Hotel size={20} />, color: 'purple' },
-            { type: 'travel', label: 'Travel Agent', icon: <Plane size={20} />, color: 'teal' },
+            {
+              type: 'customer',
+              label: 'Customer Billing',
+              icon: <Users size={20} />,
+              color: 'indigo',
+            },
+            {
+              type: 'restaurant',
+              label: 'Restaurant Billing',
+              icon: <Coffee size={20} />,
+              color: 'green',
+            },
+            {
+              type: 'hotel',
+              label: 'Hotel Payments',
+              icon: <Hotel size={20} />,
+              color: 'purple',
+            },
+            {
+              type: 'travel',
+              label: 'Travel Agent',
+              icon: <Plane size={20} />,
+              color: 'teal',
+            },
           ].map((form, index) => (
             <motion.button
               key={form.type}
@@ -308,12 +354,15 @@ const BillingSystem: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="card glass-card p-6 rounded-2xl neumorphic-card"
+          className="clean-main-wrapper p-6"
         >
           {!showPreview ? (
             <>
               <div className="flex items-center gap-2 mb-6">
-                <Calculator className="text-[var(--icon-bg-indigo)]" size={24} />
+                <Calculator
+                  className="text-[var(--icon-bg-indigo)]"
+                  size={24}
+                />
                 <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
                   {activeFormType === 'customer' && 'Customer Billing'}
                   {activeFormType === 'restaurant' && 'Restaurant Billing'}
@@ -327,8 +376,13 @@ const BillingSystem: React.FC = () => {
             <div className="bill-preview space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                  <FileText className="text-[var(--icon-bg-purple)]" size={24} />
-                  <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Bill Preview</h2>
+                  <FileText
+                    className="text-[var(--icon-bg-purple)]"
+                    size={24}
+                  />
+                  <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
+                    Bill Preview
+                  </h2>
                 </div>
                 <div className="flex gap-4">
                   <motion.button
@@ -350,19 +404,26 @@ const BillingSystem: React.FC = () => {
                   </motion.button>
                 </div>
               </div>
-              
+
               {/* Hidden container for all bill previews */}
               <div className="pdf-preview-container">
                 {bills.map((bill, index) => (
-                  <div key={index} id={`bill-preview-${index}`} className="pdf-preview">
+                  <div
+                    key={index}
+                    id={`bill-preview-${index}`}
+                    className="pdf-preview"
+                  >
                     <BillPreview billData={bill} index={index} />
                   </div>
                 ))}
               </div>
-              
+
               {/* Visible current bill preview */}
               <BillPreview billData={bills[currentBillIndex]} />
-              <ExportActions billData={bills[currentBillIndex]} allBills={bills} />
+              <ExportActions
+                billData={bills[currentBillIndex]}
+                allBills={bills}
+              />
             </div>
           )}
         </motion.div>

@@ -103,7 +103,7 @@ const HOSSBookings: React.FC = () => {
   modeOfPayment: booking.modeOfPayment || 'Cash',
   toAccount: booking.toAccount || '',
   scheme: booking.scheme || '',
-  status: booking.status || 'Pending',
+  // status: booking.status || 'Pending',
   date: booking.dateBooked || new Date().toISOString().split('T')[0],
   formType: 'customer',
   ratePerGuest: 500,
