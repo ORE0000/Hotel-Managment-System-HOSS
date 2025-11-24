@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState , useRef, useEffect } from 'react';
 import { Calculator, FileText, Plus, Users, Coffee, Hotel, Plane } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast'; // ← You already have this, just confirming
 import BillingForm from './BillingForm';
 import RestaurantForm from './RestaurantForm';
 import HotelPaymentForm from './HotelPaymentForm';
@@ -10,6 +12,8 @@ import ExportActions from './ExportActions';
 import { BillData, FormType } from 'src/types';
 import { calculateBillAmount, calculateDue } from '../../lib/calculationUtils';
 import './Billing.css';
+
+
 
 const initialBillData: BillData = {
   guestName: '',
@@ -51,6 +55,62 @@ const BillingSystem: React.FC = () => {
   const [currentBillIndex, setCurrentBillIndex] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [activeFormType, setActiveFormType] = useState<FormType>('customer');
+    const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!location.state) return;
+
+    const state = location.state as any;
+
+    // Case 1: Single pre-filled bill
+    if (state.billData) {
+      const incoming = state.billData;
+
+      const newBill: BillData = {
+        ...initialBillData,
+        ...incoming,
+        formType: incoming.formType || 'customer',
+        date: incoming.date || new Date().toISOString().split('T')[0],
+      };
+
+      // Recalculate amounts
+      newBill.billAmount = calculateBillAmount(newBill);
+      newBill.due = calculateDue(newBill);
+
+      setBills([newBill]);
+      setCurrentBillIndex(0);
+      setShowPreview(false);
+      setActiveFormType(newBill.formType as FormType);
+
+      toast.success('Bill pre-filled from booking! Review and generate.');
+    }
+
+    // Case 2: Bulk bills (array)
+    if (state.bills && Array.isArray(state.bills)) {
+      const mapped: BillData[] = state.bills.map((item: any) => {
+        const bill: BillData = {
+          ...initialBillData,
+          ...item,
+          formType: item.formType || 'customer',
+          date: item.date || new Date().toISOString().split('T')[0],
+        };
+        bill.billAmount = calculateBillAmount(bill);
+        bill.due = calculateDue(bill);
+        return bill;
+      });
+
+      setBills(mapped);
+      setCurrentBillIndex(0);
+      setShowPreview(false);
+      setActiveFormType(mapped[0]?.formType || 'customer');
+
+      toast.success(`${mapped.length} bills pre-filled! Ready to generate.`);
+    }
+
+    // Clear state to prevent re-trigger on refresh
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

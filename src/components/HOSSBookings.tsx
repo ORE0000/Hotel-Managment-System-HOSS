@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchHOSSBookings } from '../services/ApiService';
-import { ExtendedBookingDetail } from '../types'; // Import from index.ts
+import { ExtendedBookingDetail ,BillData} from '../types'; // Import from index.ts
 import {
   useState,
   useMemo,
@@ -38,6 +38,8 @@ import HOSSSummaryPreview from './PdfPreview/HOSSSummaryPreview';
 import './BillingSystem/Billing.css';
 import './PdfPreview/Summary.css';
 import DrawerEdit from './DrawerEdit/DrawerEdit';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Files } from 'lucide-react';
 
 Modal.setAppElement('#root');
 
@@ -58,6 +60,7 @@ const HOSSBookings: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const hasSelection = selectedRows.size > 0;
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] =
     useState<ExtendedBookingDetail | null>(null);
@@ -69,6 +72,42 @@ const HOSSBookings: React.FC = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<any>(null);
+  const [hasAutoNavigated, setHasAutoNavigated] = useState(false);
+
+  const navigate = useNavigate();
+
+  const mapToBillData = (booking: ExtendedBookingDetail): Partial<BillData> => ({
+  guestName: booking.guestName || '',
+  hotel: booking.hotel?.split('/')[0]?.trim() || 'Hotel Om Shiv Shankar',
+  // address: booking.address || '',
+  // idNumber: booking.idNumber || '',
+  contact: booking.contact || '',
+  // roomNumber: booking.roomNumber || '',
+  checkIn: booking.checkIn || '',
+  checkOut: booking.checkOut || '',
+  days: Number(booking.day),
+  pax: Number(booking.pax) || 1,
+  doubleBedRoom: Number(booking.roomName?.doubleBed) || 0,
+  tripleBedRoom: Number(booking.roomName?.tripleBed) || 0,
+  fourBedRoom: Number(booking.roomName?.fourBed) || 0,
+  extraBedRoom: Number(booking.roomName?.extraBed) || 0,
+  kitchenRoom: Number(booking.roomName?.kitchen) || 0,
+  doubleBedRate: booking.roomRent?.doubleBed || 2000,
+  tripleBedRate: booking.roomRent?.tripleBed || 2400,
+  fourBedRate: booking.roomRent?.fourBed || 3200,
+  extraBedRate: booking.roomRent?.extraBed || 800,
+  kitchenRate: booking.roomRent?.kitchen || 1500,
+  advance: Number(booking.advance) || 0,
+  cashIn: Number(booking.cashIn) || 0,
+  cashOut: Number(booking.cashOut) || 0,
+  modeOfPayment: booking.modeOfPayment || 'Cash',
+  toAccount: booking.toAccount || '',
+  scheme: booking.scheme || '',
+  status: booking.status || 'Pending',
+  date: booking.dateBooked || new Date().toISOString().split('T')[0],
+  formType: 'customer',
+  ratePerGuest: 500,
+});
 
   const {
     data: hossBookings,
@@ -90,6 +129,48 @@ const HOSSBookings: React.FC = () => {
       toast.error(`Failed to load HOSS bookings: ${error.message}`);
     }
   }, [isSuccess, isError, error]);
+
+  // ------------------------------------------------------------
+  // AUTO-JUMP TO TODAY (OR NEAREST DATE) — ONLY RUNS ONCE
+  // ------------------------------------------------------------
+  useEffect(() => {
+    if (!hossBookings || !hossBookings.length || hasAutoNavigated) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const todayTime = new Date(today).getTime();
+
+    // 1️⃣ Try exact match
+    let targetIndex = hossBookings.findIndex((item) => item.checkIn === today);
+
+    // 2️⃣ If no exact match → find nearest past / future
+    if (targetIndex === -1) {
+      let nearestPast = { index: -1, diff: Infinity };
+      let nearestFuture = { index: -1, diff: Infinity };
+
+      hossBookings.forEach((item, idx) => {
+        const dateTime = new Date(item.checkIn).getTime();
+        const diff = Math.abs(todayTime - dateTime);
+
+        if (dateTime < todayTime && diff < nearestPast.diff) {
+          nearestPast = { index: idx, diff };
+        }
+
+        if (dateTime > todayTime && diff < nearestFuture.diff) {
+          nearestFuture = { index: idx, diff };
+        }
+      });
+
+      targetIndex =
+        nearestPast.index !== -1 ? nearestPast.index : nearestFuture.index;
+    }
+
+    // 3️⃣ If valid index found → navigate to correct page
+    if (targetIndex !== -1) {
+      const targetPage = Math.floor(targetIndex / itemsPerPage) + 1;
+      setPage(targetPage);
+      setHasAutoNavigated(true);
+    }
+  }, [hossBookings, hasAutoNavigated, itemsPerPage]);
 
   useEffect(() => {
     refetch();
@@ -1128,89 +1209,110 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <motion.button
-                onClick={copySelectedRows}
-                disabled={selectedRows.size === 0}
-                className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 disabled:opacity-50"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <FiCopy size={14} /> Copy
-              </motion.button>
-              <div className="relative">
-                <motion.button
-                  onClick={() => setShowExportDropdown(!showExportDropdown)}
-                  className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <FiDownload size={14} /> Export
-                </motion.button>
-                {showExportDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-40 bg-[var(--card-bg)] rounded-lg shadow-lg z-10 border border-[var(--border-color)]"
+              {hasSelection && (
+                <>
+                  {/* COPY BUTTON */}
+                  <motion.button
+                    onClick={copySelectedRows}
+                    className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                   >
-                    <button
-                      onClick={downloadCSV}
-                      className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] rounded-t-lg flex items-center gap-2 text-sm"
+                    <FiCopy size={14} /> Copy
+                  </motion.button>
+
+                  {/* EXPORT DROPDOWN */}
+                  <div className="relative">
+                    <motion.button
+                      onClick={() => setShowExportDropdown(!showExportDropdown)}
+                      className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
                     >
-                      <FiFileText size={14} /> CSV
-                    </button>
-                    <button
-                      onClick={downloadJSON}
-                      className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                      <FiDownload size={14} /> Export
+                    </motion.button>
+
+                    {showExportDropdown && (
+                      <motion.div className="absolute right-0 mt-2 w-40 bg-[var(--card-bg)] rounded-lg shadow-lg z-10 border border-[var(--border-color)]">
+                        <button
+                          onClick={downloadCSV}
+                          className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                        >
+                          <FiFileText size={14} /> CSV
+                        </button>
+                        <button
+                          onClick={downloadJSON}
+                          className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                        >
+                          <FiCode size={14} /> JSON
+                        </button>
+                        <button
+                          onClick={downloadPDF}
+                          className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                        >
+                          <FiFile size={14} /> PDF
+                        </button>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* SUMMARY DROPDOWN */}
+                  <div className="relative">
+                    <motion.button
+                      onClick={() =>
+                        setShowSummaryDropdown(!showSummaryDropdown)
+                      }
+                      className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
                     >
-                      <FiCode size={14} /> JSON
-                    </button>
-                    <button
-                      onClick={downloadPDF}
-                      className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] rounded-b-lg flex items-center gap-2 text-sm"
-                    >
-                      <FiFile size={14} /> PDF
-                    </button>
-                  </motion.div>
-                )}
-              </div>
-              <div className="relative">
-                <motion.button
-                  onClick={() => setShowSummaryDropdown(!showSummaryDropdown)}
-                  className="btn-primary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <FiDownload size={14} /> Generate Summary
-                </motion.button>
-                {showSummaryDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-40 bg-[var(--card-bg)] rounded-lg shadow-lg z-10 border border-[var(--border-color)]"
+                      <FiDownload size={14} /> Generate Summary
+                    </motion.button>
+
+                    {showSummaryDropdown && (
+                      <motion.div className="absolute right-0 mt-2 w-40 bg-[var(--card-bg)] rounded-lg shadow-lg z-10 border border-[var(--border-color)]">
+                        <button
+                          onClick={downloadSummaryCSV}
+                          className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                        >
+                          <FiFileText size={14} /> CSV
+                        </button>
+                        <button
+                          onClick={downloadSummaryJSON}
+                          className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                        >
+                          <FiCode size={14} /> JSON
+                        </button>
+                        <button
+                          onClick={downloadSummaryPDF}
+                          className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
+                        >
+                          <FiFile size={14} /> PDF
+                        </button>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* ⭐⭐⭐ NEW — BULK BILL BUTTON ⭐⭐⭐ */}
+                  <motion.button
+                    onClick={() => {
+                      const selected = Array.from(selectedRows).map((idx) =>
+                        mapToBillData(filteredData[idx])
+                      );
+                      navigate('/billing', { state: { bills: selected } });
+                      toast.success(`Generating ${selected.length} bills...`);
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl shadow-lg text-white
+                                  bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500
+                                  transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <button
-                      onClick={downloadSummaryCSV}
-                      className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] rounded-t-lg flex items-center gap-2 text-sm"
-                    >
-                      <FiFileText size={14} /> CSV
-                    </button>
-                    <button
-                      onClick={downloadSummaryJSON}
-                      className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] flex items-center gap-2 text-sm"
-                    >
-                      <FiCode size={14} /> JSON
-                    </button>
-                    <button
-                      onClick={downloadSummaryPDF}
-                      className="w-full text-left px-4 py-2 hover:bg-[var(--sidebar-hover)] rounded-b-lg flex items-center gap-2 text-sm"
-                    >
-                      <FiFile size={14} /> PDF
-                    </button>
-                  </motion.div>
-                )}
-              </div>
+                    <Files size={18} />
+                    Generate {selectedRows.size} Bills
+                  </motion.button>
+                </>
+              )}
             </div>
           </div>
 
@@ -1369,6 +1471,23 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
                             >
                               <EyeIcon className="w-4 h-4" /> View
                             </motion.button>
+                            <motion.button
+                              onClick={() => {
+                                const billData = mapToBillData(item);
+                                navigate('/billing', { state: { billData } });
+                                toast.success(
+                                  'Opening bill for ' + item.guestName
+                                );
+                              }}
+                              className="flex items-center gap-2 px-4 py-2 text-sm rounded-full font-medium shadow-glow text-white 
+                                                bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 
+                                                transition-all duration-200 active:scale-95"
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
+                              aria-label="Generate Bill"
+                            >
+                              <FileText className="w-4 h-4" /> Bill
+                            </motion.button>
                             {/* ──────────────────────────────────────
                             <motion.button
                               onClick={() => {
@@ -1397,14 +1516,6 @@ on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: tru
                               <PencilIcon className="w-4 h-4" /> Edit
                             </motion.button>
                             */}
-                            <motion.button
-                              className="btn-primary flex items-center gap-1 px-3 py-1 text-xs rounded-lg shadow-glow"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              aria-label={`Generate bill for ${item.guestName}`}
-                            >
-                              <DocumentTextIcon className="w-4 h-4" /> Bill
-                            </motion.button>
                           </td>
                         </motion.tr>
                       )
